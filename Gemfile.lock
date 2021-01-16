@@ -18,6 +18,7 @@ GEM
     rspec-support (3.10.1)
 
 PLATFORMS
+  universal-darwin-20
   x86_64-linux
 
 DEPENDENCIES
