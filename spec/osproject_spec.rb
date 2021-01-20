@@ -1,8 +1,14 @@
 require 'osproject'
 require 'tmpdir'
 
+sdkmap = {
+  "android" => OSProject::Android,
+  "ios" => OSProject::IOS,
+}
+
 Dir.foreach("spec/samples") do |sdk|
   next if sdk == '..' or sdk == '.'
+  sdk_class = sdkmap[sdk]
   Dir.foreach("spec/samples/" + sdk) do |sampledir|
     next if sampledir == '..' or sampledir == '.'
     Dir.mktmpdir do |tmpdir| 
@@ -11,8 +17,8 @@ Dir.foreach("spec/samples") do |sdk|
       RSpec.describe OSProject, "#initialize" do
         context sampledir do
           it "successfully instantitates the object" do
-            proj = OSProject.new('ios', projdir)
-            expect(proj.type).to eq 'ios'
+            proj = sdk_class.new(projdir, 'lang', 'app_id')
+            expect(proj.type).to eq sdk
             expect(proj.dir).to eq projdir
           end
         end
@@ -20,7 +26,7 @@ Dir.foreach("spec/samples") do |sdk|
       RSpec.describe OSProject, ".add_sdk" do 
         context "cocoapods + foobar" do
           it "successfully adds sdk" do
-            proj = OSProject.new(sdk, projdir)
+            proj = sdk_class.new(projdir, 'lang', 'app_id')
             proj.add_sdk()
             # XXX need to add a check here
           end
