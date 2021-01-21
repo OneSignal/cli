@@ -2,7 +2,7 @@ require 'osproject'
 require 'tmpdir'
 
 sdkmap = {
-  "android" => OSProject::Android,
+  "android" => OSProject::GoogleAndroid,
   "ios" => OSProject::IOS,
 }
 
