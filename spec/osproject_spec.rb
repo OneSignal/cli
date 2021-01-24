@@ -2,8 +2,8 @@ require 'osproject'
 require 'tmpdir'
 
 sdkmap = {
-  "android" => OSProject::GoogleAndroid,
-  "ios" => OSProject::IOS,
+  'googleandroid' => OSProject::GoogleAndroid,
+  'ios' => OSProject::IOS,
 }
 
 Dir.foreach("spec/samples") do |sdk|
@@ -25,13 +25,13 @@ Dir.foreach("spec/samples") do |sdk|
       context sampledir do
         it "successfully instantitates the object" do
           proj = sdk_class.new(projdir, 'lang', 'app_id')
-          expect(proj.type).to eq sdk
+          expect(proj.type.to_s).to eq sdk
           expect(proj.dir).to eq projdir
         end
         it "successfully adds sdk" do
           proj = sdk_class.new(projdir, 'lang', 'app_id')
           expect(proj.has_sdk?()).to eq false
-          proj.add_sdk()
+          proj.add_sdk!()
           expect(proj.has_sdk?()).to eq true
         end
       end
