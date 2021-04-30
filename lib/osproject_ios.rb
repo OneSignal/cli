@@ -3,21 +3,48 @@ require 'xcodeproj'
 
 class OSProject::IOS < OSProject
   # this is a temporary placeholder
-  attr_accessor :has_sdk
+  attr_accessor :has_sdk :project :target :nse :os_app_id :lang :target_name
 
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
+    @lang = lang
+    @os_app_id = os_app_id
     super(:ios, dir, lang, os_app_id)
   end
+
   def add_sdk!
     @has_sdk = true
+    add_onesignal_dependency()
+    #Main target setup
+    add_onesignal_framework_to_main_target()
+    add_capabilities_to_main_target()
+    add_app_groups_to_main_target()
+    add_os_init_to_app_target()
+    #NSE setup
+    create_nse()
+    add_onesignal_framework_to_nse()
+    add_app_groups_to_nse()
   end
+
   def has_sdk?
     return self.has_sdk
   end
 
   def install_onesignal(xcproj_path, target_name, os_app_id)
+    # TODO error check too make sure both project and target were found
+    @project = Xcodeproj::Project.open(xcproj_path)
+    @target = @project.native_targets.find { |target| target.name == target_name}
+    # this can probably be optional
+    @os_app_id = os_app_id
+    # this can be used to get the entitlements plist
+    @target_name = target_name
 
+    add_sdk()
+  end
+
+  #Just SPM for now. Can be extended to support Cocoapods
+  def add_onesignal_dependency()
+    add_onesignal_sp_dependency()
   end
 
   # create new target
