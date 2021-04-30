@@ -17,6 +17,8 @@ Dir.foreach("spec/samples/iOS") do |lang|
       after(:all) do
           #FileUtils.remove_entry tmpdir
       end
+      # The project name is the same as the folder its in
+      xcodeproj_path = projdir + '/' + sampledirname + '.xcodeproj'
       context sampledirname do
         it "successfully instantitates the object" do
           proj = proj_class.new(projdir, lang, 'app_id')
@@ -26,7 +28,7 @@ Dir.foreach("spec/samples/iOS") do |lang|
         it "successfully adds sdk" do
           proj = proj_class.new(projdir, lang, 'app_id')
           expect(proj.has_sdk?()).to eq false
-          proj.add_sdk!()
+          proj.install_onesignal!(xcodeproj_path, sampledirname, 'app_id')
           expect(proj.has_sdk?()).to eq true
         end
       end

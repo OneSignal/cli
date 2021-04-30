@@ -8,18 +8,15 @@ class OSProject::IOS < OSProject
   attr_accessor :project 
   attr_accessor :target 
   attr_accessor :nse 
-  attr_accessor :os_app_id 
-  attr_accessor :lang 
+
   attr_accessor :target_name
 
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
-    @lang = lang
-    @os_app_id = os_app_id
     super(:ios, dir, lang, os_app_id)
   end
 
-  def add_sdk!
+  def _add_sdk
     @has_sdk = true
     _add_onesignal_dependency()
     #Main target setup
@@ -28,7 +25,7 @@ class OSProject::IOS < OSProject
     _add_app_groups_to_main_target()
     _add_os_init_to_app_target()
     #NSE setup
-    #_create_nse()
+    _create_nse()
     _add_onesignal_framework_to_nse()
     _add_app_groups_to_nse()
   end
@@ -37,7 +34,7 @@ class OSProject::IOS < OSProject
     return self.has_sdk
   end
 
-  def install_onesignal(xcproj_path, target_name, os_app_id)
+  def install_onesignal!(xcproj_path, target_name, os_app_id)
     # TODO error check too make sure both project and target were found
     @project = Xcodeproj::Project.open(xcproj_path)
     @target = self.project.native_targets.find { |target| target.name == target_name}
@@ -46,7 +43,7 @@ class OSProject::IOS < OSProject
     # this can be used to get the entitlements plist
     @target_name = target_name
 
-    add_sdk()
+    _add_sdk()
   end
 
   #Just SPM for now. Can be extended to support Cocoapods
@@ -71,11 +68,11 @@ class OSProject::IOS < OSProject
     self.nse.add_file_references([assets])
 
     #Set Info.plist
-    self.build_configuration_list.set_setting('INFOPLIST_FILE', "NotificationExtension/Info.plist")
+    #self.build_configuration_list.set_setting('INFOPLIST_FILE', "NotificationExtension/Info.plist")
     #Set bundle id based on @target's bundle id
-    self.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', "")
+    #self.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', "")
     #Set dev team based on @target's dev team
-    self.build_configuration_list.set_setting('DEVELOPMENT_TEAM', "")
+    #self.build_configuration_list.set_setting('DEVELOPMENT_TEAM', "")
     self.project.save
   end
 
