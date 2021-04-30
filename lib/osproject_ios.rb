@@ -19,7 +19,7 @@ class OSProject::IOS < OSProject
     super(:ios, dir, lang, os_app_id)
   end
 
-  def _add_sdk!
+  def add_sdk!
     @has_sdk = true
     _add_onesignal_dependency()
     #Main target setup
@@ -28,7 +28,7 @@ class OSProject::IOS < OSProject
     _add_app_groups_to_main_target()
     _add_os_init_to_app_target()
     #NSE setup
-    _create_nse()
+    #_create_nse()
     _add_onesignal_framework_to_nse()
     _add_app_groups_to_nse()
   end
