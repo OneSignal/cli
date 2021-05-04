@@ -13,7 +13,7 @@ class OSProject::IOS < OSProject
 
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
-    super(:ios, dir, lang, os_app_id)
+    super("ios", dir, lang, os_app_id)
   end
 
   def _add_sdk
@@ -34,14 +34,13 @@ class OSProject::IOS < OSProject
     return self.has_sdk
   end
 
-  def install_onesignal!(xcproj_path, target_name, os_app_id)
+  def install_onesignal!(xcproj_path, target_name)
     # TODO error check too make sure both project and target were found
     @project = Xcodeproj::Project.open(xcproj_path)
     @target = self.project.native_targets.find { |target| target.name == target_name}
-    # this can probably be optional
-    @os_app_id = os_app_id
     # this can be used to get the entitlements plist
     @target_name = target_name
+    # TODO get dev team and bundle id for the target
 
     _add_sdk()
   end
@@ -57,10 +56,15 @@ class OSProject::IOS < OSProject
   # embed in main app target
   # can be done using xcodeproj
   def _create_nse()
-    group = self.project.main_group.find_subpath('NotificationExtension', true)
+    group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
-    group.new_reference("NotificationExtension/NotificationService.h")
-    assets = group.new_reference("NotificationExtension/NotificationService.m")
+    nsePath = self.dir + '/OneSignalNotificationServiceExtension'
+    unless File.directory?(nsePath)
+      FileUtils.mkdir(nsePath)
+    end
+    FileUtils.cp_r %w(lib/NotificationService.h lib/NotificationService.m), nsePath
+    group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
+    assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
 
     #Create NSE target
     #new_target(type, name, platform, deployment_target = nil, product_group = nil, language = nil) ⇒ PBXNativeTarget
@@ -68,7 +72,7 @@ class OSProject::IOS < OSProject
     self.nse.add_file_references([assets])
 
     #Set Info.plist
-    self.project.build_configuration_list.set_setting('INFOPLIST_FILE', "NotificationExtension/Info.plist")
+    self.project.build_configuration_list.set_setting('INFOPLIST_FILE', "OneSignalNotificationServiceExtension/Info.plist")
     #Set bundle id based on @target's bundle id
     self.project.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', "com.example.onesignal.OneSignalNotificationServiceExtension")
     #Set dev team based on @target's dev team

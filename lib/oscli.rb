@@ -6,12 +6,15 @@ require_relative 'osproject_android'
 class AddCommand < Clamp::Command
     option "--type", "TYPE", "project type (osx, android)", default: "osx"
     parameter "[DIR]", "project directory", default: "."
+    parameter "[TARGETNAME]", "Name of the target XCProject", default: ""
     parameter "[LANG]", "language", default: "objc"
     parameter "[APPID]", "OneSignal App ID", default: ""
     
     def execute
       if type == 'osx'
-        OSProject::IOS.new(dir, lang, appid).add_sdk!()
+        ios_proj = OSProject::IOS.new(dir, lang, appid)
+        xcodeproj_path = dir + '/' + targetname + '.xcodeproj'
+        ios_proj.install_onesignal!(xcodeproj_path, targetname)
       elsif type == 'android'
         OSProject::GoogleAndroid.new(dir, lang, appid).add_sdk!()
       else
