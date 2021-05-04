@@ -9,10 +9,16 @@ class AddCommand < Clamp::Command
     parameter "[TARGETNAME]", "Name of the target XCProject", default: ""
     parameter "[LANG]", "language", default: "objc"
     parameter "[APPID]", "OneSignal App ID", default: ""
-    
-    def execute
+
+    def execute  
+      langmap = {
+        'objc' => :objc,
+        'swift' => :swift,
+        'java' => :java,
+        'kotlin' => :kotlin
+      }
       if type == 'osx'
-        ios_proj = OSProject::IOS.new(dir, lang, appid)
+        ios_proj = OSProject::IOS.new(dir, langmap[lang], appid)
         xcodeproj_path = dir + '/' + targetname + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path, targetname)
       elsif type == 'android'

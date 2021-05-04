@@ -62,13 +62,19 @@ class OSProject::IOS < OSProject
     unless File.directory?(nsePath)
       FileUtils.mkdir(nsePath)
     end
-    FileUtils.cp_r %w(lib/NotificationService.h lib/NotificationService.m), nsePath
-    group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
-    assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
+
+    if lang == :swift
+      FileUtils.cp_r('lib/NotificationService.swift', nsePath) 
+      assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")
+    else
+      FileUtils.cp_r %w(lib/NotificationService.h lib/NotificationService.m), nsePath
+      group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
+      assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
+    end
 
     #Create NSE target
     #new_target(type, name, platform, deployment_target = nil, product_group = nil, language = nil) ⇒ PBXNativeTarget
-    @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, :objc)
+    @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, lang)
     self.nse.add_file_references([assets])
 
     #Set Info.plist
