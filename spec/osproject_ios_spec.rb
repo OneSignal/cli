@@ -28,7 +28,7 @@ Dir.foreach("spec/samples/iOS") do |lang|
         it "successfully adds sdk" do
           proj = proj_class.new(projdir, lang, 'app_id')
           expect(proj.has_sdk?()).to eq false
-          proj.install_onesignal!(xcodeproj_path, sampledirname, 'app_id')
+          proj.install_onesignal!(xcodeproj_path, sampledirname)
           expect(proj.has_sdk?()).to eq true
         end
       end
