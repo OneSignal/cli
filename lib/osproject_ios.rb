@@ -26,6 +26,7 @@ class OSProject::IOS < OSProject
     _add_os_init_to_app_target()
     #NSE setup
     _create_nse()
+    _add_nse_to_app_target()
     _add_onesignal_framework_to_nse()
     _add_app_groups_to_nse()
   end
@@ -50,11 +51,6 @@ class OSProject::IOS < OSProject
     _add_onesignal_sp_dependency()
   end
 
-  # create new target
-  # needs notificationservice files, plists
-  # set bundle id, dev team?
-  # embed in main app target
-  # can be done using xcodeproj
   def _create_nse()
     
     group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
@@ -73,24 +69,42 @@ class OSProject::IOS < OSProject
       assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
     end
 
-    #copy the Info.plist file into the NSE group
+    # copy the Info.plist file into the NSE group
     FileUtils.cp_r('lib/Info.plist', nsePath)
-    assets = group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
+    plist_reference = group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
 
-    #Create NSE target
-    #new_target(type, name, platform, deployment_target = nil, product_group = nil, language = nil) ⇒ PBXNativeTarget
+    # Create NSE target
     @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, lang)
     self.nse.add_file_references([assets])
 
-    #Set Info.plist
-    self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', "OneSignalNotificationServiceExtension/Info.plist")
-    #Set bundle id based on @target's Debug bundle id
+    # Set Info.plist and Product Name
+    self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
+    self.nse.build_configuration_list.set_setting('PRODUCT_NAME', 'OneSignalNotificationServiceExtension')
+    # Set bundle id based on @target's Debug bundle id
     bundle_id = self.target.build_configuration_list.get_setting('PRODUCT_BUNDLE_IDENTIFIER')["Debug"]
     self.nse.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', bundle_id + ".OneSignalNotificationServiceExtension")
-    #Set dev team based on @target's dev team
+    # Set dev team based on @target's dev team
     dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
     self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
-    self.project.save
+
+    self.project.save()
+  end
+
+  def _add_nse_to_app_target()
+    self.target.add_dependency(self.nse)
+    nse_product = self.nse.product_reference
+    puts self.target.copy_files_build_phases 
+    embed_extensions_phase = self.target.copy_files_build_phases.find do |copy_phase|
+      copy_phase.symbol_dst_subfolder_spec == :plug_ins
+    end
+    if embed_extensions_phase.nil?
+      embed_extensions_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+    end
+    abort "Couldn't find 'Embed App Extensions' phase" if embed_extensions_phase.nil?
+
+    build_file = embed_extensions_phase.add_file_reference(nse_product)
+    build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
+    self.project.save()
   end
 
   # add OneSignalXCFramework Swift Package dependency
