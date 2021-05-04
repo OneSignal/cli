@@ -56,6 +56,7 @@ class OSProject::IOS < OSProject
   # embed in main app target
   # can be done using xcodeproj
   def _create_nse()
+    
     group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
     nsePath = self.dir + '/OneSignalNotificationServiceExtension'
@@ -82,11 +83,13 @@ class OSProject::IOS < OSProject
     self.nse.add_file_references([assets])
 
     #Set Info.plist
-    self.project.build_configuration_list.set_setting('INFOPLIST_FILE', "OneSignalNotificationServiceExtension/Info.plist")
-    #Set bundle id based on @target's bundle id
-    self.project.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', "com.example.onesignal.OneSignalNotificationServiceExtension")
+    self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', "OneSignalNotificationServiceExtension/Info.plist")
+    #Set bundle id based on @target's Debug bundle id
+    bundle_id = self.target.build_configuration_list.get_setting('PRODUCT_BUNDLE_IDENTIFIER')["Debug"]
+    self.nse.build_configuration_list.set_setting('PRODUCT_BUNDLE_IDENTIFIER', bundle_id + ".OneSignalNotificationServiceExtension")
     #Set dev team based on @target's dev team
-    self.project.build_configuration_list.set_setting('DEVELOPMENT_TEAM', "lilomi inc")
+    dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
+    self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
     self.project.save
   end
 
