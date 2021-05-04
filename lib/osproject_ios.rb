@@ -72,6 +72,10 @@ class OSProject::IOS < OSProject
       assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
     end
 
+    #copy the Info.plist file into the NSE group
+    FileUtils.cp_r('lib/Info.plist', nsePath)
+    assets = group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
+
     #Create NSE target
     #new_target(type, name, platform, deployment_target = nil, product_group = nil, language = nil) ⇒ PBXNativeTarget
     @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, lang)
