@@ -159,8 +159,29 @@ class OSProject::IOS < OSProject
 
   # push capability in entitlments
   # background capability with remote notifications enabled
-  # use xcodeproj
   def _add_capabilities_to_main_target()
+    
+    #Update Info.plist of Target to include background modes with remote notifications
+    plist_path = dir + "/" + self.target.build_configuration_list.get_setting('INFOPLIST_FILE')['Debug']
+    info_plist = Xcodeproj::Plist.read_from_path(plist_path)
+    if info_plist["UIBackgroundModes"].nil?
+      info_plist["UIBackgroundModes"] = ["remote-notification"]
+    elsif !info_plist["UIBackgroundModes"].include? 'remote-notification'
+      info_plist["UIBackgroundModes"].append('remote-notification')
+    end
+
+    Xcodeproj::Plist.write_to_path(info_plist, plist_path)
+
+    #Create targetname.entitlements if it doesn't exist
+    #plist = CFPropertyList::List.new(:file => "example.entitlements")
+    # <?xml version="1.0" encoding="UTF-8"?>
+    # <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    # <plist version="1.0">
+    # <dict>
+    # 	<key>aps-environment</key>
+    # 	<string>development</string>
+    # </dict>
+    # </plist>
 
   end
 
