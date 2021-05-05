@@ -173,15 +173,24 @@ class OSProject::IOS < OSProject
     Xcodeproj::Plist.write_to_path(info_plist, plist_path)
 
     #Create targetname.entitlements if it doesn't exist
-    #plist = CFPropertyList::List.new(:file => "example.entitlements")
-    # <?xml version="1.0" encoding="UTF-8"?>
-    # <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    # <plist version="1.0">
-    # <dict>
-    # 	<key>aps-environment</key>
-    # 	<string>development</string>
-    # </dict>
-    # </plist>
+    group = self.project.main_group.find_subpath(self.target_name, false)
+    group_relative_entitlements_path = group.path + "/" + self.target_name + ".entitlements"
+    entitlements_path = dir + "/" + group_relative_entitlements_path
+    entitlements = {}
+    if File.exist?(entitlements_path)
+      entitlements = Xcodeproj::Plist.read_from_path(entitlements_path)
+      if entitlements['aps-environment'].nil?
+        entitlements['aps-environment'] = 'development'
+        Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
+      end
+    else
+      entitlements = {
+        'aps-environment' => 'development'
+      }
+      Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
+      group.new_reference(self.target_name + ".entitlements")
+      self.target.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
+    end
 
   end
 
