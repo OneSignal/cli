@@ -21,6 +21,7 @@ class OSProject::IOS < OSProject
 
   def _add_sdk
     @has_sdk = true
+    # Order matters here
     _add_onesignal_dependency()
     #Main target setup
     _add_onesignal_framework_to_main_target()
@@ -37,13 +38,12 @@ class OSProject::IOS < OSProject
     return self.has_sdk
   end
 
+  # Called by oscli's add command
   def install_onesignal!(xcproj_path, target_name)
     # TODO error check too make sure both project and target were found
     @project = Xcodeproj::Project.open(xcproj_path)
     @target = self.project.native_targets.find { |target| target.name == target_name}
-    # this can be used to get the entitlements plist
     @target_name = target_name
-    # TODO get dev team and bundle id for the target
 
     _add_sdk()
   end
@@ -110,7 +110,6 @@ class OSProject::IOS < OSProject
   end
 
   # add OneSignalXCFramework Swift Package dependency
-  # can use xcoed gem for this
   def _add_onesignal_sp_dependency()
     # Remove existing dependency if it exists
     self.project.root_object.package_references
@@ -143,9 +142,8 @@ class OSProject::IOS < OSProject
   end 
 
   # app groups capability
-  # use xcodeproj
+  # Creates OneSignalNotificationServiceExtension.entitlements if it doesn't exist
   def _add_app_groups_to_nse()
-    #Create OneSignalNotificationServiceExtension.entitlements if it doesn't exist
     group_relative_entitlements_path = self.nse.name + "/" + self.nse.name + ".entitlements"
     entitlements_path = dir + "/" + group_relative_entitlements_path
     entitlements = {}
