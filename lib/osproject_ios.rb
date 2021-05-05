@@ -8,6 +8,7 @@ class OSProject::IOS < OSProject
   attr_accessor :project 
   attr_accessor :target 
   attr_accessor :nse 
+  attr_accessor :nse_group
   attr_accessor :onesignal_ref
   attr_accessor :onesignal_product_ref
 
@@ -54,7 +55,7 @@ class OSProject::IOS < OSProject
 
   def _create_nse()
     
-    group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
+    @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
     nsePath = self.dir + '/OneSignalNotificationServiceExtension'
     unless File.directory?(nsePath)
@@ -63,16 +64,16 @@ class OSProject::IOS < OSProject
 
     if lang == :swift
       FileUtils.cp_r('lib/NotificationService.swift', nsePath) 
-      assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")
+      assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")
     else
       FileUtils.cp_r %w(lib/NotificationService.h lib/NotificationService.m), nsePath
-      group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
-      assets = group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
+      self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
+      assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
     end
 
     # copy the Info.plist file into the NSE group
     FileUtils.cp_r('lib/Info.plist', nsePath)
-    plist_reference = group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
+    plist_reference = self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
 
     # Create NSE target
     @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, lang)
@@ -144,6 +145,29 @@ class OSProject::IOS < OSProject
   # app groups capability
   # use xcodeproj
   def _add_app_groups_to_nse()
+    #Create OneSignalNotificationServiceExtension.entitlements if it doesn't exist
+    group_relative_entitlements_path = self.nse.name + "/" + self.nse.name + ".entitlements"
+    entitlements_path = dir + "/" + group_relative_entitlements_path
+    entitlements = {}
+    bundle_id = self.target.build_configuration_list.get_setting('PRODUCT_BUNDLE_IDENTIFIER')["Debug"]
+    app_group_name = 'group.' + bundle_id + '.onesignal'
+    if File.exist?(entitlements_path)
+      entitlements = Xcodeproj::Plist.read_from_path(entitlements_path)
+      if entitlements['com.apple.security.application-groups'].nil?
+        entitlements['com.apple.security.application-groups'] = [app_group_name]
+      elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
+        entitlements['com.apple.security.application-groups'].append(app_group_name)
+      end
+      Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
+    else
+      entitlements = {
+        'com.apple.security.application-groups' => [app_group_name]
+      }
+      Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
+      self.nse_group.new_reference(group_relative_entitlements_path)
+      self.nse.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
+    end
+    self.project.save()
   end
 
   # add swift package binary to main target
@@ -158,6 +182,7 @@ class OSProject::IOS < OSProject
 
   # push capability in entitlments
   # background capability with remote notifications enabled
+  # App group entitlement based on target bundle id
   def _add_capabilities_to_main_target()
     
     #Update Info.plist of Target to include background modes with remote notifications
@@ -200,7 +225,7 @@ class OSProject::IOS < OSProject
       entitlements['com.apple.security.application-groups'].append(app_group_name)
     end
     Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
-
+    self.project.save()
   end
 
   # depends on language and app lifecycle (appdelegate vs swiftui)
