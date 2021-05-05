@@ -24,7 +24,6 @@ class OSProject::IOS < OSProject
     #Main target setup
     _add_onesignal_framework_to_main_target()
     _add_capabilities_to_main_target()
-    _add_app_groups_to_main_target()
     _add_os_init_to_app_target()
     #NSE setup
     _create_nse()
@@ -192,11 +191,16 @@ class OSProject::IOS < OSProject
       self.target.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
     end
 
-  end
+    # Add App Group to entitlements
+    bundle_id = self.target.build_configuration_list.get_setting('PRODUCT_BUNDLE_IDENTIFIER')["Debug"]
+    app_group_name = 'group.' + bundle_id + '.onesignal'
+    if entitlements['com.apple.security.application-groups'].nil?
+      entitlements['com.apple.security.application-groups'] = [app_group_name]
+    elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
+      entitlements['com.apple.security.application-groups'].append(app_group_name)
+    end
+    Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
 
-  # app groups capability
-  # use xcodeproj
-  def _add_app_groups_to_main_target()
   end
 
   # depends on language and app lifecycle (appdelegate vs swiftui)
