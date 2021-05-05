@@ -26,6 +26,7 @@ class OSProject::IOS < OSProject
     _add_os_init_to_app_target()
     #NSE setup
     _create_nse()
+    _add_nse_to_app_target()
     _add_onesignal_framework_to_nse()
     _add_app_groups_to_nse()
   end
@@ -50,11 +51,6 @@ class OSProject::IOS < OSProject
     _add_onesignal_sp_dependency()
   end
 
-  # create new target
-  # needs notificationservice files, plists
-  # set bundle id, dev team?
-  # embed in main app target
-  # can be done using xcodeproj
   def _create_nse()
     
     group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
@@ -90,8 +86,6 @@ class OSProject::IOS < OSProject
     # Set dev team based on @target's dev team
     dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
     self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
-    
-    _add_nse_to_app_target()
 
     self.project.save()
   end
