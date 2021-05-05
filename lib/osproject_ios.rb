@@ -8,6 +8,8 @@ class OSProject::IOS < OSProject
   attr_accessor :project 
   attr_accessor :target 
   attr_accessor :nse 
+  attr_accessor :onesignal_ref
+  attr_accessor :onesignal_product_ref
 
   attr_accessor :target_name
 
@@ -110,11 +112,34 @@ class OSProject::IOS < OSProject
   # add OneSignalXCFramework Swift Package dependency
   # can use xcoed gem for this
   def _add_onesignal_sp_dependency()
+    # Remove existing dependency if it exists
+    self.project.root_object.package_references
+           .select { |ref| ref.repositoryURL == 'https://github.com/OneSignal/OneSignal-XCFramework.git' }
+           .each(&:remove_from_project)
+
+    # Create new package reference
+    package_ref = Xcodeproj::Project::Object::XCRemoteSwiftPackageReference.new(self.project, self.project.generate_uuid)
+    package_ref.repositoryURL = 'https://github.com/OneSignal/OneSignal-XCFramework.git'
+    package_ref.requirement = {
+      'kind' => 'upToNextMajorVersion',
+      'minimumVersion' => '3.4.3',
+    }
+    @onesignal_ref = package_ref
+    self.project.root_object.package_references << self.onesignal_ref
+    
+    @onesignal_product_ref = Xcodeproj::Project::Object::XCSwiftPackageProductDependency.new(project, project.generate_uuid)
+    self.onesignal_product_ref.product_name = 'OneSignal'
+    self.project.save()
   end
 
   # add swift package binary to nse target
-  # can use xcoed gem for this
   def _add_onesignal_framework_to_nse()
+    self.nse.package_product_dependencies
+                 .select { |product| product.product_name == 'OneSignal' }
+                 .each(&:remove_from_project)
+
+    self.nse.package_product_dependencies << self.onesignal_product_ref
+    self.project.save()
   end 
 
   # app groups capability
@@ -122,20 +147,21 @@ class OSProject::IOS < OSProject
   def _add_app_groups_to_nse()
   end
 
-  # Code is dependent on language but otherwise a constant
-  # Probably should just be a file with code already populated.
-  def _add_onesignal_code_to_nse()
-  end
-
   # add swift package binary to main target
-  # can use xcoed gem for this
   def _add_onesignal_framework_to_main_target()
+    self.target.package_product_dependencies
+                  .select { |product| product.product_name == 'OneSignal' }
+                  .each(&:remove_from_project)
+
+    self.target.package_product_dependencies << self.onesignal_product_ref
+    self.project.save()
   end 
 
   # push capability in entitlments
   # background capability with remote notifications enabled
   # use xcodeproj
   def _add_capabilities_to_main_target()
+
   end
 
   # app groups capability
