@@ -21,7 +21,7 @@ class OSProject::IOS < OSProject
 
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
-    super("ios", dir, lang, os_app_id)
+    super("iOS", dir, lang, os_app_id)
   end
 
   def _add_sdk
