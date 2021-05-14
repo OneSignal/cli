@@ -3,7 +3,6 @@ require 'xcodeproj'
 
 class OSProject::IOS < OSProject
   # this is a temporary placeholder
-  attr_accessor :has_sdk 
 
   attr_accessor :project 
   attr_accessor :target 
@@ -25,7 +24,6 @@ class OSProject::IOS < OSProject
   end
 
   def _add_sdk
-    @has_sdk = true
     # Order matters here
     _add_onesignal_dependency()
     #Main target setup
@@ -40,7 +38,10 @@ class OSProject::IOS < OSProject
   end
 
   def has_sdk?
-    return self.has_sdk
+    unless !self.project 
+      return self.project.root_object.package_references.any? { |ref| ref.repositoryURL == 'https://github.com/OneSignal/OneSignal-XCFramework.git' }
+    end
+    false
   end
 
   # Called by oscli's add command
