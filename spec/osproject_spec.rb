@@ -5,16 +5,16 @@ require 'tmpdir'
 
 sdkmap = {
   'googleandroid' => OSProject::GoogleAndroid,
-  'ios' => OSProject::IOS,
+  'iOS' => OSProject::IOS,
 }
 
 Dir.foreach("spec/samples") do |platform|
-  next if platform == '..' or platform == '.'
+  next if platform == '..' or platform == '.' or platform.include? "."
   proj_class = sdkmap[platform]
   Dir.foreach("spec/samples/" + platform) do |lang|
-    next if lang == '..' or lang == '.'
+    next if lang == '..' or lang == '.' or lang.include? "."
     Dir.foreach("spec/samples/" + platform + '/' + lang) do |sampledirname|
-      next if sampledirname == '..' or sampledirname == '.'
+      next if sampledirname == '..' or sampledirname == '.' or sampledirname.include? "."
       sampledir = 'spec/samples/' + platform + '/' + lang + '/' + sampledirname
       tmpdir = Dir.mktmpdir()
       projdir = tmpdir + '/' + sampledirname
@@ -33,14 +33,21 @@ Dir.foreach("spec/samples") do |platform|
           end
           it "successfully adds sdk" do
             proj = proj_class.new(projdir, lang, 'app_id')
+            
             if platform == 'googleandroid'
               # For Android samples, we have a appclassfile symlink in the proj root dir
               # When users use the CLI, they specify the file.
               proj.app_class_location = '.appclassfile'
+              expect(proj.has_sdk?()).to eq false
+              proj.add_sdk!()
+              expect(proj.has_sdk?()).to eq true
+            elsif platform =='iOS'
+              xcodeproj_path = projdir + '/' + sampledirname + '.xcodeproj'
+              expect(proj.has_sdk?()).to eq false
+              proj.install_onesignal!(xcodeproj_path, sampledirname)
+              expect(proj.has_sdk?()).to eq true
             end
-            expect(proj.has_sdk?()).to eq false
-            proj.add_sdk!()
-            expect(proj.has_sdk?()).to eq true
+            
           end
         end
       end
