@@ -14,6 +14,11 @@ class OSProject::IOS < OSProject
 
   attr_accessor :target_name
 
+  SWIFT_NSE_PATH = 'tmpl/iOS/swift/NotificationService.swift'
+  OBJC_NSE_H_PATH = 'tmpl/iOS/objc/NotificationService.h'
+  OBJC_NSE_M_PATH = 'tmpl/iOS/objc/NotificationService.m'
+  NSE_INFO_PLIST_PATH = 'tmpl/iOS/Info.plist'
+
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
     super("ios", dir, lang, os_app_id)
@@ -63,16 +68,16 @@ class OSProject::IOS < OSProject
     end
 
     if lang == :swift
-      FileUtils.cp_r('lib/NotificationService.swift', nsePath) 
+      FileUtils.cp_r(SWIFT_NSE_PATH, nsePath) 
       assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")
     else
-      FileUtils.cp_r %w(lib/NotificationService.h lib/NotificationService.m), nsePath
+      FileUtils.cp_r [OBJC_NSE_H_PATH, OBJC_NSE_M_PATH], nsePath
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
       assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
     end
 
     # copy the Info.plist file into the NSE group
-    FileUtils.cp_r('lib/Info.plist', nsePath)
+    FileUtils.cp_r(NSE_INFO_PLIST_PATH, nsePath)
     plist_reference = self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
 
     # Create NSE target
