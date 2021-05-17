@@ -1,4 +1,5 @@
 require_relative 'osproject'
+require_relative 'osproject_helpers'
 require 'xcodeproj'
 
 class OSProject::IOS < OSProject
@@ -18,6 +19,15 @@ class OSProject::IOS < OSProject
   OBJC_NSE_M_PATH = 'tmpl/iOS/objc/NotificationService.m'
   NSE_INFO_PLIST_PATH = 'tmpl/iOS/Info.plist'
 
+  NSE_POD_DEPENDENCY = "target 'OneSignalNotificationServiceExtension' do
+  # Comment the next line if you don\'t want to use dynamic frameworks
+  use_frameworks!
+
+  # Pods for OneSignalNotificationServiceExtension
+  pod 'OneSignal', '>= 3.4.3', '< 4.0'
+
+end"
+
   def initialize(dir, lang, os_app_id)
     @has_sdk = false
     super("iOS", dir, lang, os_app_id)
@@ -25,16 +35,15 @@ class OSProject::IOS < OSProject
 
   def _add_sdk
     # Order matters here
-    _add_onesignal_dependency()
     #Main target setup
-    _add_onesignal_framework_to_main_target()
     _add_capabilities_to_main_target()
     _add_os_init_to_app_target()
     #NSE setup
     _create_nse()
     _add_nse_to_app_target()
-    _add_onesignal_framework_to_nse()
     _add_app_groups_to_nse()
+    #Add OneSignal
+    _add_onesignal_dependency()
   end
 
   def has_sdk?
@@ -54,9 +63,38 @@ class OSProject::IOS < OSProject
     _add_sdk()
   end
 
-  #Just SPM for now. Can be extended to support Cocoapods
+  # Only use Cocoapods if a Podfile already exists. If not use SwiftPM
   def _add_onesignal_dependency()
-    _add_onesignal_sp_dependency()
+    if File.exist?(self.dir + '/Podfile')
+      _add_onesignal_podspec_dependency()
+    else 
+      _add_onesignal_sp_dependency()
+      _add_onesignal_framework_to_main_target()
+      _add_onesignal_framework_to_nse()
+    end
+  end
+
+  def _add_onesignal_podspec_dependency()
+    # remove Podfile.lock
+    File.delete(self.dir + '/Podfile.lock') if File.exist?(self.dir + '/Podfile.lock')
+
+    _insert_lines(self.dir + '/Podfile', 
+      Regexp.quote("target '" + self.target_name + "' do"),
+      "  pod 'OneSignal', '>= 3.4.3', '< 4.0'")
+    
+    #Append the NSE Target with OneSignal Pod unless the NSE target is already in the podfile
+    unless File.open(self.dir + '/Podfile').each_line.any?{|line| line.include?("target 'OneSignalNotificationServiceExtension' do") }
+      File.open(self.dir + '/Podfile', 'a') { |f| f.write(NSE_POD_DEPENDENCY) }
+    end
+
+    #Run pod install on the proj directory
+    install_script = 'pod install --project-directory=' + self.dir
+    success = system(install_script)
+    if success
+      puts "added OneSignal to Podfile"
+    else
+      puts "Error adding OneSignal to Podfile"
+    end
   end
 
   def _create_nse()
