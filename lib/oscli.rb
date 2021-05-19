@@ -1,12 +1,32 @@
 require 'clamp'
 require_relative 'osproject'
+require_relative 'osproject_ios'
+require_relative 'osproject_android'
 
 class AddCommand < Clamp::Command
     option "--type", "TYPE", "project type (osx, android)", default: "osx"
     parameter "[DIR]", "project directory", default: "."
-    
-    def execute
-      OSProject.new(type, dir).add_sdk()
+    parameter "[TARGETNAME]", "Name of the target XCProject", default: ""
+    parameter "[LANG]", "language", default: "objc"
+    parameter "[APPID]", "OneSignal App ID", default: ""
+
+    def execute  
+      langmap = {
+        'objc' => :objc,
+        'swift' => :swift,
+        'java' => :java,
+        'kotlin' => :kotlin
+      }
+      if type == 'osx'
+        ios_proj = OSProject::IOS.new(dir, langmap[lang], appid)
+        xcodeproj_path = dir + '/' + targetname + '.xcodeproj'
+        ios_proj.install_onesignal!(xcodeproj_path, targetname)
+      elsif type == 'android'
+        OSProject::GoogleAndroid.new(dir, lang, appid).add_sdk!()
+      else
+        puts 'Invalid type (osx or android)'
+      end
+      
     end
 end
 

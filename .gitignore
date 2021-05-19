@@ -20,3 +20,4 @@
 *.log
 .externalNativeBuild
 .cxx
+.vscode/settings.json
