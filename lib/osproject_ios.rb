@@ -24,7 +24,7 @@ class OSProject::IOS < OSProject
   use_frameworks!
 
   # Pods for OneSignalNotificationServiceExtension
-  pod 'OneSignal', '>= 3.4.3', '< 4.0'
+  pod 'OneSignalXCFramework', '>= 3.4.3', '< 4.0'
 
 end"
 
@@ -80,7 +80,7 @@ end"
 
     _insert_lines(self.dir + '/Podfile', 
       Regexp.quote("target '" + self.target_name + "' do"),
-      "  pod 'OneSignal', '>= 3.4.3', '< 4.0'")
+      "  pod 'OneSignalXCFramework', '>= 3.4.3', '< 4.0'")
     
     #Append the NSE Target with OneSignal Pod unless the NSE target is already in the podfile
     unless File.open(self.dir + '/Podfile').each_line.any?{|line| line.include?("target 'OneSignalNotificationServiceExtension' do") }
