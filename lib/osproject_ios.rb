@@ -48,7 +48,8 @@ end"
 
   def has_sdk?
     unless !self.project 
-      return self.project.root_object.package_references.any? { |ref| ref.repositoryURL == 'https://github.com/OneSignal/OneSignal-XCFramework.git' }
+      return self.project.root_object.package_references.any? { |ref| ref.repositoryURL == 'https://github.com/OneSignal/OneSignal-XCFramework.git' } ||
+      File.open(self.dir + '/Podfile').each_line.any?{|line| line.include?("pod 'OneSignalXCFramework'") }
     end
     false
   end
@@ -78,9 +79,12 @@ end"
     # remove Podfile.lock
     File.delete(self.dir + '/Podfile.lock') if File.exist?(self.dir + '/Podfile.lock')
 
-    _insert_lines(self.dir + '/Podfile', 
-      Regexp.quote("target '" + self.target_name + "' do"),
-      "  pod 'OneSignalXCFramework', '>= 3.4.3', '< 4.0'")
+    #Append OneSignal Pod to the main target unless it is already in the podfile
+    unless File.open(self.dir + '/Podfile').each_line.any?{|line| line.include?("pod 'OneSignalXCFramework', '>= 3.4.3', '< 4.0'") }
+      _insert_lines(self.dir + '/Podfile', 
+        Regexp.quote("target '" + self.target_name + "' do"),
+        "  pod 'OneSignalXCFramework', '>= 3.4.3', '< 4.0'")
+    end
     
     #Append the NSE Target with OneSignal Pod unless the NSE target is already in the podfile
     unless File.open(self.dir + '/Podfile').each_line.any?{|line| line.include?("target 'OneSignalNotificationServiceExtension' do") }
@@ -98,33 +102,11 @@ end"
   end
 
   def _create_nse()
-    
-    @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
-    # This should just be a file we add with the code already in it.
-    nsePath = self.dir + '/OneSignalNotificationServiceExtension'
-    unless File.directory?(nsePath)
-      FileUtils.mkdir(nsePath)
-    end
-
-    if lang == :swift
-      FileUtils.cp_r(SWIFT_NSE_PATH, nsePath) 
-      assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")
-    else
-      FileUtils.cp_r [OBJC_NSE_H_PATH, OBJC_NSE_M_PATH], nsePath
-      self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
-      assets = self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")
-    end
-
-    # copy the Info.plist file into the NSE group
-    FileUtils.cp_r(NSE_INFO_PLIST_PATH, nsePath)
-    plist_reference = self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
-
     # Create NSE target
-    @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, "10.0", nil, lang)
-    self.nse.add_file_references([assets])
-
-    # Set Info.plist and Product Name
-    self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
+    self.project.embedded_targets_in_native_target(self.target).each do |embedded_target|
+      return if embedded_target.name == 'OneSignalNotificationServiceExtension'
+    end
+    @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, self.target.deployment_target, nil, lang)
     self.nse.build_configuration_list.set_setting('PRODUCT_NAME', 'OneSignalNotificationServiceExtension')
     # Set bundle id based on @target's Debug bundle id
     bundle_id = self.target.build_configuration_list.get_setting('PRODUCT_BUNDLE_IDENTIFIER')["Debug"]
@@ -133,24 +115,50 @@ end"
     dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
     self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
 
+    @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
+    # This should just be a file we add with the code already in it.
+    nsePath = self.dir + '/OneSignalNotificationServiceExtension'
+    unless File.directory?(nsePath)
+      FileUtils.mkdir(nsePath)
+    end
+
+    if lang == :swift && !File.exist?(nsePath + '/NotificationService.swift')
+      FileUtils.cp_r(SWIFT_NSE_PATH, nsePath) 
+      self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")])
+    elsif lang == :objc && !File.exist?(nsePath + '/NotificationService.m')
+      FileUtils.cp_r [OBJC_NSE_H_PATH, OBJC_NSE_M_PATH], nsePath
+      self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
+      self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")])
+    end
+
+    # copy the Info.plist file into the NSE group
+    unless File.exist?(nsePath + '/Info.plist')
+      FileUtils.cp_r(NSE_INFO_PLIST_PATH, nsePath)
+      self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
+      self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
+    end
+
     self.project.save()
   end
 
   def _add_nse_to_app_target()
-    self.target.add_dependency(self.nse)
-    nse_product = self.nse.product_reference
-    puts self.target.copy_files_build_phases 
-    embed_extensions_phase = self.target.copy_files_build_phases.find do |copy_phase|
-      copy_phase.symbol_dst_subfolder_spec == :plug_ins
-    end
-    if embed_extensions_phase.nil?
-      embed_extensions_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
-    end
-    abort "Couldn't find 'Embed App Extensions' phase" if embed_extensions_phase.nil?
+    return if !self.nse
+    unless self.target.dependency_for_target(self.nse)
+      self.target.add_dependency(self.nse)
+      nse_product = self.nse.product_reference
+      puts self.target.copy_files_build_phases 
+      embed_extensions_phase = self.target.copy_files_build_phases.find do |copy_phase|
+        copy_phase.symbol_dst_subfolder_spec == :plug_ins
+      end
+      if embed_extensions_phase.nil?
+        embed_extensions_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+      end
+      abort "Couldn't find 'Embed App Extensions' phase" if embed_extensions_phase.nil?
 
-    build_file = embed_extensions_phase.add_file_reference(nse_product)
-    build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
-    self.project.save()
+      build_file = embed_extensions_phase.add_file_reference(nse_product)
+      build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
+      self.project.save()
+    end
   end
 
   # add OneSignalXCFramework Swift Package dependency
@@ -177,6 +185,7 @@ end"
 
   # add swift package binary to nse target
   def _add_onesignal_framework_to_nse()
+    return if !self.nse
     self.nse.package_product_dependencies
                  .select { |product| product.product_name == 'OneSignal' }
                  .each(&:remove_from_project)
@@ -188,6 +197,7 @@ end"
   # app groups capability
   # Creates OneSignalNotificationServiceExtension.entitlements if it doesn't exist
   def _add_app_groups_to_nse()
+    return if !self.nse
     group_relative_entitlements_path = self.nse.name + "/" + self.nse.name + ".entitlements"
     entitlements_path = dir + "/" + group_relative_entitlements_path
     entitlements = {}
