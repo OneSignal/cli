@@ -5,8 +5,8 @@ require_relative 'osproject_android'
 
 class AddCommand < Clamp::Command
     option "--type", "TYPE", "project type (osx, android)", default: "osx"
-    parameter "[DIR]", "project directory", default: "."
-    parameter "[TARGETNAME]", "Name of the target XCProject", default: ""
+    parameter "PATH", "path to the project directory", default: "."
+    parameter "TARGETNAME", "Name of the target XCProject or appclassfile", default: ""
     parameter "[LANG]", "language", default: "objc"
     parameter "[APPID]", "OneSignal App ID", default: ""
 
@@ -18,9 +18,9 @@ class AddCommand < Clamp::Command
         'kotlin' => :kotlin
       }
       if type == 'osx'
-        ios_proj = OSProject::IOS.new(dir, langmap[lang], appid)
+        ios_proj = OSProject::IOS.new(dir, targetname, langmap[lang], appid)
         xcodeproj_path = dir + '/' + targetname + '.xcodeproj'
-        ios_proj.install_onesignal!(xcodeproj_path, targetname)
+        ios_proj.install_onesignal!(xcodeproj_path)
       elsif type == 'android'
         OSProject::GoogleAndroid.new(dir, lang, appid).add_sdk!()
       else
@@ -46,6 +46,6 @@ class MooCommand < Clamp::Command
 end
 
 class OSCLI < Clamp::Command
-    subcommand "add", "Add the OneSignal SDK to the project", AddCommand
+    subcommand "add_sdk", "Add the OneSignal SDK to the project", AddCommand,
     subcommand "moo", "introduces you to a helpful cow", MooCommand
 end
