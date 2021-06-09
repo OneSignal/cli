@@ -57,10 +57,19 @@ end"
 
   # Called by oscli's add command
   def install_onesignal!(xcproj_path)
-    # TODO error check too make sure both project and target were found
-    @project = Xcodeproj::Project.open(xcproj_path)
+    if File.exist?(xcproj_path)
+      @project = Xcodeproj::Project.open(xcproj_path)
+    else
+      puts "Unable to open an xcodeproj at path: " + xcproj_path
+      exit(1)
+    end
+    
     @target = self.project.native_targets.find { |target| target.name == self.target_name}
-
+    if !self.target
+      puts "Unable to find an app target with name: " + self.target_name
+      exit(1)
+    end
+    
     _add_sdk()
   end
 
