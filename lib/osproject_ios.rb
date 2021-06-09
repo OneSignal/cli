@@ -28,8 +28,9 @@ class OSProject::IOS < OSProject
 
 end"
 
-  def initialize(dir, lang, os_app_id)
+  def initialize(dir, target_name, lang, os_app_id)
     @has_sdk = false
+    @target_name = target_name
     super("iOS", dir, lang, os_app_id)
   end
 
@@ -55,7 +56,7 @@ end"
   end
 
   # Called by oscli's add command
-  def install_onesignal!(xcproj_path, target_name)
+  def install_onesignal!(xcproj_path)
     if File.exist?(xcproj_path)
       @project = Xcodeproj::Project.open(xcproj_path)
     else
@@ -63,14 +64,12 @@ end"
       exit(1)
     end
     
-    @target = self.project.native_targets.find { |target| target.name == target_name}
+    @target = self.project.native_targets.find { |target| target.name == self.target_name}
     if !self.target
-      puts "Unable to find an app target with name: " + target_name
+      puts "Unable to find an app target with name: " + self.target_name
       exit(1)
     end
     
-    @target_name = target_name
-
     _add_sdk()
   end
 

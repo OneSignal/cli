@@ -36,7 +36,7 @@ class OSProject::Dummy < OSProject
   # this is a temporary placeholder
   attr_accessor :has_sdk
 
-  def initialize(dir, lang, os_app_id)
+  def initialize(dir, target, lang, os_app_id)
     @has_sdk = false
     super(:dummy, dir, lang, os_app_id)
   end

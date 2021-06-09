@@ -4,13 +4,14 @@ require_relative 'osproject_helpers'
 class OSProject::GoogleAndroid < OSProject
   attr_accessor :app_class_location
 
-  def initialize(dir, lang, os_app_id)
+  def initialize(dir, app_class_location, lang, os_app_id)
+    @app_class_location = app_class_location
     super(:googleandroid, dir, lang, os_app_id)
   end
   
   def add_sdk!
     # TODO: test for reqs
-    if self.app_class_location == nil
+    if app_class_location == nil
       raise 
     end
     #
@@ -32,13 +33,13 @@ class OSProject::GoogleAndroid < OSProject
 
     # add OS API key to Application class
     if self.lang == "java"
-      _sub_file(dir + '/' + self.app_class_location,
+      _sub_file(dir + '/' + app_class_location,
                 /^(import \w*;)/,
                 '\1' + "import com.onesignal.OneSignal;")
-      _sub_file(dir + '/' + self.app_class_location,
+      _sub_file(dir + '/' + app_class_location,
                 /(\w+ extends Application {)/, 
                 '\1' + 'private static final String ONESIGNAL_APP_ID = "' + self.os_app_id + '";')
-      _insert_lines(dir + '/' + self.app_class_location, 
+      _insert_lines(dir + '/' + app_class_location, 
                     'super\.onCreate\(\);?', [
                       "// Enable verbose OneSignal logging to debug issues if needed.",
                       "// It is recommended you remove this after validating your implementation.",
@@ -48,13 +49,13 @@ class OSProject::GoogleAndroid < OSProject
                       "OneSignal.setAppId(ONESIGNAL_APP_ID);"
       ])
     elsif self.lang == "kotlin"
-      _sub_file(dir + '/' + self.app_class_location,
+      _sub_file(dir + '/' + app_class_location,
                 /^(import \w*;)/,
                 '\1' + 'import com.onesignal.OneSignal')
-      _sub_file(dir + '/' + self.app_class_location,
+      _sub_file(dir + '/' + app_class_location,
                 /^(import \w*;)/,
                 '\1' + 'const val ONESIGNAL_APP_ID = "' + self.os_app_id + '"')
-      _insert_lines(dir + '/' + self.app_class_location,
+      _insert_lines(dir + '/' + app_class_location,
                     Regexp.quote('super.onCreate()'), [
                       "// Enable verbose OneSignal logging to debug issues if needed.",
                       "// It is recommended you remove this after validating your implementation.",
