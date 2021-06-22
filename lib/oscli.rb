@@ -82,8 +82,10 @@ class OSCLI < Clamp::Command
 
     def self.helptext
       puts <<~HELP 
-        install-sdk: Install the OneSignal SDK in the project
-        help: Lists the available commands in the OneSignal CLI
+        \e[1mAvailable Commands:\e[0m 
+        \e[1minstall-sdk:\e[0m  Install the OneSignal SDK in the project
+        \e[1mhelp:\e[0m  Lists the available commands in the OneSignal CLI
+        See: <command-name> --help for details
       HELP
     end
 end
