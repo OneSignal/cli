@@ -125,6 +125,9 @@ end"
     # Set dev team based on @target's dev team
     dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
     self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
+    if lang == :swift
+      self.nse.build_configuration_list.set_setting('SWIFT_VERSION', '5.0')
+    end
 
     @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
