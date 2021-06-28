@@ -17,7 +17,7 @@
     self.contentHandler = contentHandler;
     self.bestAttemptContent = [request.content mutableCopy];
     
-    [OneSignal didReceiveNotificationExtensionRequest:self.receivedRequest withMutableNotificationContent:self.bestAttemptContent];
+    [OneSignal didReceiveNotificationExtensionRequest:self.receivedRequest withMutableNotificationContent:self.bestAttemptContent withContentHandler:self.contentHandler];
     
     // DEBUGGING: Uncomment the 2 lines below and comment out the one above to ensure this extension is excuting
     //            Note, this extension only runs when mutable-content is set
@@ -27,8 +27,6 @@
     
     // Uncomment this line to set the default log level of NSE to VERBOSE so we get all logs from NSE logic
     //[OneSignal setLogLevel:ONE_S_LL_VERBOSE visualLevel:ONE_S_LL_NONE];
-    
-    self.contentHandler(self.bestAttemptContent);
 }
 
 - (void)serviceExtensionTimeWillExpire {
