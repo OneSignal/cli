@@ -14,10 +14,10 @@ class OSProject::IOS < OSProject
 
   attr_accessor :target_name
 
-  SWIFT_NSE_PATH = 'tmpl/iOS/swift/NotificationService.swift'
-  OBJC_NSE_H_PATH = 'tmpl/iOS/objc/NotificationService.h'
-  OBJC_NSE_M_PATH = 'tmpl/iOS/objc/NotificationService.m'
-  NSE_INFO_PLIST_PATH = 'tmpl/iOS/Info.plist'
+  SWIFT_NSE_PATH = '/tmpl/iOS/swift/NotificationService.swift'
+  OBJC_NSE_H_PATH = '/tmpl/iOS/objc/NotificationService.h'
+  OBJC_NSE_M_PATH = '/tmpl/iOS/objc/NotificationService.m'
+  NSE_INFO_PLIST_PATH = '/tmpl/iOS/Info.plist'
 
   NSE_POD_DEPENDENCY = "target 'OneSignalNotificationServiceExtension' do
   # Comment the next line if you don\'t want to use dynamic frameworks
@@ -138,19 +138,19 @@ end"
     unless File.directory?(nsePath)
       FileUtils.mkdir(nsePath)
     end
-
+    cli_dir = File.expand_path(File.dirname(__dir__))
     if lang == :swift && !File.exist?(nsePath + '/NotificationService.swift')
-      FileUtils.cp_r(SWIFT_NSE_PATH, nsePath) 
+      FileUtils.cp_r(cli_dir+SWIFT_NSE_PATH, nsePath) 
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")])
     elsif lang == :objc && !File.exist?(nsePath + '/NotificationService.m')
-      FileUtils.cp_r [OBJC_NSE_H_PATH, OBJC_NSE_M_PATH], nsePath
+      FileUtils.cp_r [cli_dir+OBJC_NSE_H_PATH, cli_dir+OBJC_NSE_M_PATH], nsePath
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")])
     end
 
     # copy the Info.plist file into the NSE group
     unless File.exist?(nsePath + '/Info.plist')
-      FileUtils.cp_r(NSE_INFO_PLIST_PATH, nsePath)
+      FileUtils.cp_r(cli_dir+NSE_INFO_PLIST_PATH, nsePath)
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
       self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
     end
