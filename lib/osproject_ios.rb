@@ -128,6 +128,8 @@ end"
     if lang == :swift
       self.nse.build_configuration_list.set_setting('SWIFT_VERSION', '5.0')
     end
+    device_family = self.target.build_configuration_list.get_setting('TARGETED_DEVICE_FAMILY')
+    self.nse.build_configuration_list.set_setting('LD_RUNPATH_SEARCH_PATHS', "$(inherited) @executable_path/Frameworks")
 
     @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
