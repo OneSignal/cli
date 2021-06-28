@@ -2,8 +2,11 @@
 
 The OneSignal CLI is a tool to work with OneSignal projects.
 
-## Testing
-Clone the repo and test via `bin/onesignal`.
+# Setup
+1. Clone the repository
+2. If you do not have bundler 2 installed run `gem install bundler`
+3. Run `bundle install` from the root directory of the repository
+4. Commands can be run via `bin/onesignal <command>` from the root of the repository
 
 ## Installation Command
 This command can be used to add the OneSignal SDK to your mobile application project.
