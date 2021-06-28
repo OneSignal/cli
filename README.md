@@ -8,7 +8,7 @@ Clone the repo and test via `bin/onesignal`.
 ## Installation Command
 This command can be used to add the OneSignal SDK to your mobile application project.
 Currently only supports iOS Native SDK install.
-For OSX the command will: 
+For iOS the command will: 
 * add push notification capabilities and background modes
 * Add the OneSignal cocoapod or Swift Package
 * create and setup a Notification Service Extension
@@ -17,14 +17,14 @@ For OSX the command will:
 It does not yet add OneSignal initialization code in AppDelegate with your App ID.
 
 Options:
-* type - OSX or Android. Type of SDK to install. Required.
-* target - name of the App target to install in. Defaults to the entrypoint name. OSX only.
+* type - iOS or Android. Type of SDK to install. Required.
+* target - name of the App target to install in. Defaults to the entrypoint name. iOS only.
 
 Arguments:
 * Path - path to the project directory
-* Entrypoint - Name of the target XCProject (osx) or appclassfile (Android)
-* LANG - programming language to use for osx (objc, swift) or Android (java, kotlin)
-* APPID - Optional. OneSignal App ID. Not yet used for OSX installs.
+* Entrypoint - Name of the target XCProject (iOS) or appclassfile (Android)
+* LANG - programming language to use for ios (objc, swift) or Android (java, kotlin)
+* APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
 
 Example Usage
-`install-sdk --type osx ../MyAppDir MyApp objc`
+`install-sdk --type ios ../MyAppDir MyApp objc`
