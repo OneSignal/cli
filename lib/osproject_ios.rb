@@ -140,17 +140,17 @@ end"
     end
     cli_dir = File.expand_path(File.dirname(__dir__))
     if lang == :swift && !File.exist?(nsePath + '/NotificationService.swift')
-      FileUtils.cp_r(cli_dir+SWIFT_NSE_PATH, nsePath) 
+      FileUtils.cp_r(cli_dir + SWIFT_NSE_PATH, nsePath) 
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")])
     elsif lang == :objc && !File.exist?(nsePath + '/NotificationService.m')
-      FileUtils.cp_r [cli_dir+OBJC_NSE_H_PATH, cli_dir+OBJC_NSE_M_PATH], nsePath
+      FileUtils.cp_r [cli_dir + OBJC_NSE_H_PATH, cli_dir + OBJC_NSE_M_PATH], nsePath
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")])
     end
 
     # copy the Info.plist file into the NSE group
     unless File.exist?(nsePath + '/Info.plist')
-      FileUtils.cp_r(cli_dir+NSE_INFO_PLIST_PATH, nsePath)
+      FileUtils.cp_r(cli_dir + NSE_INFO_PLIST_PATH, nsePath)
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
       self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
     end
@@ -163,15 +163,16 @@ end"
     unless self.target.dependency_for_target(self.nse)
       self.target.add_dependency(self.nse)
       nse_product = self.nse.product_reference
-      embed_extensions_phase = self.target.copy_files_build_phases.find do |copy_phase|
+      embed_extensions_plugins_phase = self.target.copy_files_build_phases.find do |copy_phase|
         copy_phase.symbol_dst_subfolder_spec == :plug_ins
       end
-      if embed_extensions_phase.nil?
-        embed_extensions_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+      if embed_extensions_plugins_phase.nil?
+        embed_extensions_plugins_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+        embed_extensions_plugins_phase.symbol_dst_subfolder_spec = :plug_ins
       end
-      abort "Couldn't find 'Embed App Extensions' phase" if embed_extensions_phase.nil?
-
-      build_file = embed_extensions_phase.add_file_reference(nse_product)
+      abort "Couldn't find 'Embed App Extensions Plugin' phase" if embed_extensions_plugins_phase.nil?
+      
+      build_file = embed_extensions_plugins_phase.add_file_reference(nse_product)
       build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
       self.project.save()
       puts "Added NSE to App target"
@@ -227,7 +228,7 @@ end"
       if entitlements['com.apple.security.application-groups'].nil?
         entitlements['com.apple.security.application-groups'] = [app_group_name]
       elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
-        entitlements['com.apple.security.application-groups'].append(app_group_name)
+        entitlements['com.apple.security.application-groups'].push(app_group_name)
       end
       Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
     else
@@ -265,7 +266,7 @@ end"
       info_plist["UIBackgroundModes"] = ["remote-notification"]
       puts "Added remote notification background mode"
     elsif !info_plist["UIBackgroundModes"].include? 'remote-notification'
-      info_plist["UIBackgroundModes"].append('remote-notification')
+      info_plist["UIBackgroundModes"].push('remote-notification')
       puts "Added remote notification background mode"
     end
 
@@ -300,7 +301,7 @@ end"
       entitlements['com.apple.security.application-groups'] = [app_group_name]
       puts "Added OneSignal App Group"
     elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
-      entitlements['com.apple.security.application-groups'].append(app_group_name)
+      entitlements['com.apple.security.application-groups'].push(app_group_name)
       puts "Added OneSignal App Group"
     end
     Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
