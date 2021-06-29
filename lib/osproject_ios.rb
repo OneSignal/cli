@@ -14,10 +14,10 @@ class OSProject::IOS < OSProject
 
   attr_accessor :target_name
 
-  SWIFT_NSE_PATH = 'tmpl/iOS/swift/NotificationService.swift'
-  OBJC_NSE_H_PATH = 'tmpl/iOS/objc/NotificationService.h'
-  OBJC_NSE_M_PATH = 'tmpl/iOS/objc/NotificationService.m'
-  NSE_INFO_PLIST_PATH = 'tmpl/iOS/Info.plist'
+  SWIFT_NSE_PATH = '/tmpl/iOS/swift/NotificationService.swift'
+  OBJC_NSE_H_PATH = '/tmpl/iOS/objc/NotificationService.h'
+  OBJC_NSE_M_PATH = '/tmpl/iOS/objc/NotificationService.m'
+  NSE_INFO_PLIST_PATH = '/tmpl/iOS/Info.plist'
 
   NSE_POD_DEPENDENCY = "target 'OneSignalNotificationServiceExtension' do
   # Comment the next line if you don\'t want to use dynamic frameworks
@@ -71,6 +71,8 @@ end"
     end
     
     _add_sdk()
+    
+    puts "Finished Installing OneSignal"
   end
 
   # Only use Cocoapods if a Podfile already exists. If not use SwiftPM
@@ -80,7 +82,6 @@ end"
     else 
       _add_onesignal_sp_dependency()
       _add_onesignal_framework_to_main_target()
-      _add_onesignal_framework_to_nse()
     end
   end
 
@@ -104,8 +105,8 @@ end"
     install_script = 'pod install --project-directory=' + self.dir
     success = system(install_script)
     if success
-      puts "added OneSignal to Podfile"
-    else
+      puts "Installed OneSignal pod"
+    else  
       puts "Error adding OneSignal to Podfile"
     end
   end
@@ -123,6 +124,13 @@ end"
     # Set dev team based on @target's dev team
     dev_team = self.target.build_configuration_list.get_setting('DEVELOPMENT_TEAM')["Debug"]
     self.nse.build_configuration_list.set_setting('DEVELOPMENT_TEAM', dev_team)
+    if lang == :swift
+      self.nse.build_configuration_list.set_setting('SWIFT_VERSION', '5.0')
+    end
+    device_family = self.target.build_configuration_list.get_setting('TARGETED_DEVICE_FAMILY')["Debug"]
+    search_paths = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+    self.nse.build_configuration_list.set_setting('LD_RUNPATH_SEARCH_PATHS', search_paths)
+    self.nse.build_configuration_list.set_setting('TARGETED_DEVICE_FAMILY', device_family)
 
     @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
     # This should just be a file we add with the code already in it.
@@ -130,23 +138,23 @@ end"
     unless File.directory?(nsePath)
       FileUtils.mkdir(nsePath)
     end
-
+    cli_dir = File.expand_path(File.dirname(__dir__))
     if lang == :swift && !File.exist?(nsePath + '/NotificationService.swift')
-      FileUtils.cp_r(SWIFT_NSE_PATH, nsePath) 
+      FileUtils.cp_r(cli_dir + SWIFT_NSE_PATH, nsePath) 
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.swift")])
     elsif lang == :objc && !File.exist?(nsePath + '/NotificationService.m')
-      FileUtils.cp_r [OBJC_NSE_H_PATH, OBJC_NSE_M_PATH], nsePath
+      FileUtils.cp_r [cli_dir + OBJC_NSE_H_PATH, cli_dir + OBJC_NSE_M_PATH], nsePath
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.h")
       self.nse.add_file_references([self.nse_group.new_reference("OneSignalNotificationServiceExtension/NotificationService.m")])
     end
 
     # copy the Info.plist file into the NSE group
     unless File.exist?(nsePath + '/Info.plist')
-      FileUtils.cp_r(NSE_INFO_PLIST_PATH, nsePath)
+      FileUtils.cp_r(cli_dir + NSE_INFO_PLIST_PATH, nsePath)
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
       self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
     end
-
+    puts "Created OneSignalNotificationServiceExtension"
     self.project.save()
   end
 
@@ -155,18 +163,19 @@ end"
     unless self.target.dependency_for_target(self.nse)
       self.target.add_dependency(self.nse)
       nse_product = self.nse.product_reference
-      puts self.target.copy_files_build_phases 
-      embed_extensions_phase = self.target.copy_files_build_phases.find do |copy_phase|
+      embed_extensions_plugins_phase = self.target.copy_files_build_phases.find do |copy_phase|
         copy_phase.symbol_dst_subfolder_spec == :plug_ins
       end
-      if embed_extensions_phase.nil?
-        embed_extensions_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+      if embed_extensions_plugins_phase.nil?
+        embed_extensions_plugins_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
+        embed_extensions_plugins_phase.symbol_dst_subfolder_spec = :plug_ins
       end
-      abort "Couldn't find 'Embed App Extensions' phase" if embed_extensions_phase.nil?
-
-      build_file = embed_extensions_phase.add_file_reference(nse_product)
+      abort "Couldn't find 'Embed App Extensions Plugin' phase" if embed_extensions_plugins_phase.nil?
+      
+      build_file = embed_extensions_plugins_phase.add_file_reference(nse_product)
       build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
       self.project.save()
+      puts "Added NSE to App target"
     end
   end
 
@@ -189,10 +198,14 @@ end"
     
     @onesignal_product_ref = Xcodeproj::Project::Object::XCSwiftPackageProductDependency.new(project, project.generate_uuid)
     self.onesignal_product_ref.product_name = 'OneSignal'
+    puts "Added OneSignal Swift Package"
     self.project.save()
   end
 
   # add swift package binary to nse target
+  # Not currently called due to Apple bug when archiving with an XCFramework.
+  # The NSE is using the XCFramework from the main target by adding
+  # @executable_path/../../Frameworks to the framework search paths
   def _add_onesignal_framework_to_nse()
     return if !self.nse
     self.nse.package_product_dependencies
@@ -200,6 +213,7 @@ end"
                  .each(&:remove_from_project)
 
     self.nse.package_product_dependencies << self.onesignal_product_ref
+    puts "Added OneSignal Dependency to NSE"
     self.project.save()
   end 
 
@@ -217,7 +231,7 @@ end"
       if entitlements['com.apple.security.application-groups'].nil?
         entitlements['com.apple.security.application-groups'] = [app_group_name]
       elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
-        entitlements['com.apple.security.application-groups'].append(app_group_name)
+        entitlements['com.apple.security.application-groups'].push(app_group_name)
       end
       Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
     else
@@ -228,6 +242,7 @@ end"
       self.nse_group.new_reference(group_relative_entitlements_path)
       self.nse.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
     end
+    puts "Added OneSignal App Group to NSE"
     self.project.save()
   end
 
@@ -238,6 +253,7 @@ end"
                   .each(&:remove_from_project)
 
     self.target.package_product_dependencies << self.onesignal_product_ref
+    puts "Added OneSignal dependency to App target"
     self.project.save()
   end 
 
@@ -251,8 +267,10 @@ end"
     info_plist = Xcodeproj::Plist.read_from_path(plist_path)
     if info_plist["UIBackgroundModes"].nil?
       info_plist["UIBackgroundModes"] = ["remote-notification"]
+      puts "Added remote notification background mode"
     elsif !info_plist["UIBackgroundModes"].include? 'remote-notification'
-      info_plist["UIBackgroundModes"].append('remote-notification')
+      info_plist["UIBackgroundModes"].push('remote-notification')
+      puts "Added remote notification background mode"
     end
 
     Xcodeproj::Plist.write_to_path(info_plist, plist_path)
@@ -267,6 +285,7 @@ end"
       if entitlements['aps-environment'].nil?
         entitlements['aps-environment'] = 'development'
         Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
+        puts "Added push notification capability"
       end
     else
       entitlements = {
@@ -275,6 +294,7 @@ end"
       Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
       group.new_reference(self.target_name + ".entitlements")
       self.target.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
+      puts "Added push notification capability"
     end
 
     # Add App Group to entitlements
@@ -282,8 +302,10 @@ end"
     app_group_name = 'group.' + bundle_id + '.onesignal'
     if entitlements['com.apple.security.application-groups'].nil?
       entitlements['com.apple.security.application-groups'] = [app_group_name]
+      puts "Added OneSignal App Group"
     elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
-      entitlements['com.apple.security.application-groups'].append(app_group_name)
+      entitlements['com.apple.security.application-groups'].push(app_group_name)
+      puts "Added OneSignal App Group"
     end
     Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
     self.project.save()
