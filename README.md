@@ -17,7 +17,7 @@ For iOS the command will:
 * create and setup a Notification Service Extension
 * setup an App Group for communication with the NSE.
 
-It does not yet add OneSignal initialization code in AppDelegate with your App ID.
+Note that this command does not yet add initialization code to your app so please follow [step 5 of the guide](https://documentation.onesignal.com/docs/ios-sdk-setup#step-5---add-the-onesignal-initialization-code) to complete installation.
 
 Options:
 * type - iOS or Android. Type of SDK to install. Required.
