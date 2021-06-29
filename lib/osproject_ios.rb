@@ -82,7 +82,6 @@ end"
     else 
       _add_onesignal_sp_dependency()
       _add_onesignal_framework_to_main_target()
-      _add_onesignal_framework_to_nse()
     end
   end
 
@@ -129,7 +128,8 @@ end"
       self.nse.build_configuration_list.set_setting('SWIFT_VERSION', '5.0')
     end
     device_family = self.target.build_configuration_list.get_setting('TARGETED_DEVICE_FAMILY')["Debug"]
-    self.nse.build_configuration_list.set_setting('LD_RUNPATH_SEARCH_PATHS', "$(inherited) @executable_path/Frameworks")
+    search_paths = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+    self.nse.build_configuration_list.set_setting('LD_RUNPATH_SEARCH_PATHS', search_paths)
     self.nse.build_configuration_list.set_setting('TARGETED_DEVICE_FAMILY', device_family)
 
     @nse_group = self.project.main_group.find_subpath('OneSignalNotificationServiceExtension', true)
@@ -203,6 +203,7 @@ end"
   end
 
   # add swift package binary to nse target
+  # Not currently called due to Apple bug when archiving with an XCFramework.
   def _add_onesignal_framework_to_nse()
     return if !self.nse
     self.nse.package_product_dependencies
