@@ -1,5 +1,7 @@
 # OneSignal CLI
 
+### :warning: This tool is currently in Beta :warning:
+
 The OneSignal CLI is a tool to work with OneSignal projects.
 
 # Setup
