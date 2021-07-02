@@ -17,7 +17,8 @@ class OSProject::IOS < OSProject
   SWIFT_NSE_PATH = '/tmpl/iOS/swift/NotificationService.swift'
   OBJC_NSE_H_PATH = '/tmpl/iOS/objc/NotificationService.h'
   OBJC_NSE_M_PATH = '/tmpl/iOS/objc/NotificationService.m'
-  NSE_INFO_PLIST_PATH = '/tmpl/iOS/Info.plist'
+  SWIFT_NSE_INFO_PLIST_PATH = '/tmpl/iOS/swift/Info.plist'
+  OBJC_NSE_INFO_PLIST_PATH = '/tmpl/iOS/objc/Info.plist'
 
   NSE_POD_DEPENDENCY = "target 'OneSignalNotificationServiceExtension' do
   # Comment the next line if you don\'t want to use dynamic frameworks
@@ -150,7 +151,13 @@ end"
 
     # copy the Info.plist file into the NSE group
     unless File.exist?(nsePath + '/Info.plist')
-      FileUtils.cp_r(cli_dir + NSE_INFO_PLIST_PATH, nsePath)
+      plist_path = 
+        if lang == :swift
+          SWIFT_NSE_INFO_PLIST_PATH
+        elsif lang == :objc
+          OBJC_NSE_INFO_PLIST_PATH
+        end
+      FileUtils.cp_r(cli_dir + plist_path, nsePath)
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
       self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
     end
@@ -313,7 +320,6 @@ end"
 
   # depends on language and app lifecycle (appdelegate vs swiftui)
   def _add_os_init_to_app_target()
-  end 
-
+  end
 end
 
