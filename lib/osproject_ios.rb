@@ -74,10 +74,10 @@ end"
     
     puts "Finished Installing OneSignal"
     puts "Two steps remain for you: "
-    puts "\t1. Please add the OneSignal initialization code to your app, following step 5 in the manual process: https://documentation.onesignal.com/docs/ios-sdk-setup#step-5---add-the-onesignal-initialization-code"
-    puts "\tYou should then be able to run a test notification in Xcode."
+    puts "\t1. Add the OneSignal initialization code to your app, following step 5 in the manual process: https://tinyurl.com/hphtxfm7"
+    puts "\t2. Generate and upload the iOS Push Certificate: https://tinyurl.com/45axmtsu"
     puts ""
-    puts "\t2. Before submitting to the App store, you'll need to generate and upload the iOS Push Certificate: https://documentation.onesignal.com/docs/generate-an-ios-push-certificate"
+    puts "\tYou should then be able to run a test notification in Xcode."
   end
 
   # Only use Cocoapods if a Podfile already exists. If not use SwiftPM
