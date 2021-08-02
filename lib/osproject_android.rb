@@ -21,15 +21,24 @@ class OSProject::GoogleAndroid < OSProject
                   Regexp.quote("jcenter()"),
                   "gradlePluginPortal()")
     _insert_lines(dir + '/build.gradle',
-                  Regexp.quote("classpath 'com.android.tools.build:gradle:[^']*'"),
+                  "classpath 'com.android.tools.build:gradle:[^']*'",
                   "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'")
+    _insert_lines(dir + '/build.gradle',
+                  "classpath \"com.android.tools.build:gradle:[^']*\"",
+                  "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
     # add deps to /app/build.gradle
     _insert_lines(dir + '/app/build.gradle',
-                  Regexp.quote("implementation 'com.google.android.material:material:1.0.0'"),
+                  "implementation 'com.google.android.material:material:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
     _insert_lines(dir + '/app/build.gradle',
-                  Regexp.quote("apply plugin: 'com.android.application'"),
-                  "plugins { id 'com.onesignal.androidsdk.onesignal-gradle-plugin' }")
+                  "implementation \"com.google.android.material:material:[^']*\"",
+                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
+    _insert_lines(dir + '/app/build.gradle',
+                  "apply plugin: 'com.android.application'",
+                  "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
+    _insert_lines(dir + '/app/build.gradle',
+                  "id 'com.android.application'",
+                  "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
     # add OS API key to Application class
     if self.lang == "java"
