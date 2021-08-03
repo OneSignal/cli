@@ -42,37 +42,37 @@ class OSProject::GoogleAndroid < OSProject
 
     # add OS API key to Application class
     if self.lang == "java"
-      _sub_file(dir + '/' + app_class_location,
-                /^(import \w*;)/,
-                '\1' + "import com.onesignal.OneSignal;")
-      _sub_file(dir + '/' + app_class_location,
-                /(\w+ extends Application {)/, 
-                '\1' + 'private static final String ONESIGNAL_APP_ID = "' + self.os_app_id + '";')
-      _insert_lines(dir + '/' + app_class_location, 
-                    'super\.onCreate\(\);?', [
-                      "// Enable verbose OneSignal logging to debug issues if needed.",
-                      "// It is recommended you remove this after validating your implementation.",
-                      "OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);",
-                      "// OneSignal Initialization",
-                      "OneSignal.initWithContext(this);",
-                      "OneSignal.setAppId(ONESIGNAL_APP_ID);"
-      ])
-    elsif self.lang == "kotlin"
-      _sub_file(dir + '/' + app_class_location,
-                /^(import \w*;)/,
-                '\1' + 'import com.onesignal.OneSignal')
-      _sub_file(dir + '/' + app_class_location,
-                /^(import \w*;)/,
-                '\1' + 'const val ONESIGNAL_APP_ID = "' + self.os_app_id + '"')
       _insert_lines(dir + '/' + app_class_location,
-                    Regexp.quote('super.onCreate()'), [
-                      "// Enable verbose OneSignal logging to debug issues if needed.",
-                      "// It is recommended you remove this after validating your implementation.",
-                      "OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)",
-                      "// OneSignal Initialization",
-                      "OneSignal.initWithContext(this)",
-                      "OneSignal.setAppId(ONESIGNAL_APP_ID)"
-      ])
+                "import [a-zA-Z.]+;",
+                "import com.onesignal.OneSignal;")
+      _insert_lines(dir + '/' + app_class_location,
+                "public class [a-zA-Z\s]+{",
+                "\s\s\s\sprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
+      _sub_file(dir + '/' + app_class_location,
+                /super.onCreate\(\);\s/,
+               "super.onCreate();
+        // Enable verbose OneSignal logging to debug issues if needed.
+        // It is recommended you remove this after validating your implementation.
+        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
+        // OneSignal Initialization
+        OneSignal.initWithContext(this);
+        OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
+    elsif self.lang == "kotlin"
+      _insert_lines(dir + '/' + app_class_location,
+                "import [a-zA-Z.]+",
+                'import com.onesignal.OneSignal')
+      _insert_lines(dir + '/' + app_class_location,
+                "class [a-zA-Z\s:()]+{",
+                "\s\s\s\sval ONESIGNAL_APP_ID = \"" + self.os_app_id + "\"\n")
+      _sub_file(dir + '/' + app_class_location,
+                       /super.onCreate\(\)\s/,
+                      "super.onCreate()
+        // Enable verbose OneSignal logging to debug issues if needed.
+        // It is recommended you remove this after validating your implementation.
+        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
+        // OneSignal Initialization
+        OneSignal.initWithContext(this)
+        OneSignal.setAppId(ONESIGNAL_APP_ID)\n")
     else 
       raise "Don't know to handle #{lang}"
     end
