@@ -43,6 +43,43 @@ class OSProject::GoogleAndroid < OSProject
                   "id 'com.android.application'",
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
+    begin 
+      puts 'I am before the raise.'  
+      content = File.read(dir + '/' + app_class_location)
+    rescue
+      directory_split = app_class_location.split('/', -1)
+      puts directory_split
+      application_name = directory_split[-1].split(".")[0]
+      com_index = directory_split.index "com"
+      range = directory_split.length - 2
+      package_directory = directory_split.slice(com_index..range)
+     
+      File.open(dir + '/' + app_class_location, "w") do |f| 
+        if "#{self.lang}" == "java"    
+          f.write("package #{package_directory.join(".")};\n\n")
+          f.write("import android.app.Application;\n\n")
+          f.write("public class #{application_name} extends Application {\n")
+          f.write("\s\s\s\s@Override\n")
+          f.write("\s\s\s\spublic void onCreate() {\n")
+          f.write("\s\s\s\s\s\ssuper.onCreate();\n")
+          f.write("\s\s\s\s}\n")
+          f.write("}")
+        elsif "#{self.lang}" == "kotlin"
+          f.write("package #{package_directory.join(".")}\n\n")
+          f.write("import android.app.Application\n\n")
+          f.write("class #{application_name} : Application() {\n")
+          f.write("\s\s\s\soverride fun onCreate() {\n")
+          f.write("\s\s\s\s\s\ssuper.onCreate()\n")
+          f.write("\s\s\s\s}\n")
+          f.write("}")
+        end
+      end
+
+      _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
+                "<application",
+                "\s\sandroid:name=\"#{application_name}\"")
+    end 
+
     # add OS API key to Application class
     if "#{self.lang}" == "java"
       _insert_lines(dir + '/' + app_class_location,
@@ -66,7 +103,7 @@ class OSProject::GoogleAndroid < OSProject
                 'import com.onesignal.OneSignal')
       _insert_lines(dir + '/' + app_class_location,
                 "class [a-zA-Z\s:()]+{",
-                "\s\s\s\sval ONESIGNAL_APP_ID = \"" + self.os_app_id + "\"\n")
+                "\s\s\s\sprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
       _sub_file(dir + '/' + app_class_location,
                        /super.onCreate\(\)\s/,
                       "super.onCreate()
@@ -75,7 +112,7 @@ class OSProject::GoogleAndroid < OSProject
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
         // OneSignal Initialization
         OneSignal.initWithContext(this)
-        OneSignal.setAppId(ONESIGNAL_APP_ID)\n")
+        OneSignal.setAppId(oneSignalAppId)\n")
     else 
       raise "Don't know to handle #{lang}"
     end
