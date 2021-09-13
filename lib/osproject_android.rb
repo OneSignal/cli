@@ -14,6 +14,9 @@ class OSProject::GoogleAndroid < OSProject
     if app_class_location == nil
       raise 
     end
+
+    app_dir = app_class_location.split('/', -1)[0]
+
     #
     # TODO: this gradle tack is a very brittle approach.
     # add deps to /build.gradle
@@ -27,16 +30,16 @@ class OSProject::GoogleAndroid < OSProject
                   "classpath \"com.android.tools.build:gradle:[^']*\"",
                   "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
     # add deps to /app/build.gradle
-    _insert_lines(dir + '/app/build.gradle',
+    _insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation 'com.google.android.material:material:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    _insert_lines(dir + '/app/build.gradle',
+    _insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation \"com.google.android.material:material:[^']*\"",
                   "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
-    _insert_lines(dir + '/app/build.gradle',
+    _insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "apply plugin: 'com.android.application'",
                   "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
-    _insert_lines(dir + '/app/build.gradle',
+    _insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "id 'com.android.application'",
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
