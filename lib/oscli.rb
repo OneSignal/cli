@@ -36,7 +36,7 @@ class InstallCommand < Clamp::Command
           puts 'Invalid language (java or kotlin)'
           exit(1)
         end
-        OSProject::GoogleAndroid.new(path, language, appid).add_sdk!()
+        OSProject::GoogleAndroid.new(path, entrypoint, language, appid).add_sdk!()
       elsif !type
         puts 'Please provide a project type (ios or android) with the --type option'
       else

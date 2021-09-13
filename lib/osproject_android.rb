@@ -41,7 +41,7 @@ class OSProject::GoogleAndroid < OSProject
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
     # add OS API key to Application class
-    if self.lang == "java"
+    if "#{self.lang}" == "java"
       _insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+;",
                 "import com.onesignal.OneSignal;")
@@ -57,7 +57,7 @@ class OSProject::GoogleAndroid < OSProject
         // OneSignal Initialization
         OneSignal.initWithContext(this);
         OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
-    elsif self.lang == "kotlin"
+    elsif "#{self.lang}" == "kotlin"
       _insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+",
                 'import com.onesignal.OneSignal')
