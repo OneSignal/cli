@@ -20,6 +20,10 @@ For iOS the command will:
 * create and setup a Notification Service Extension
 * setup an App Group for communication with the NSE.
 
+For Android the command will: 
+* Add the OneSignal gradle dependencies
+* Add the OneSignal init code
+
 Note that this command does not yet add initialization code to your app so please follow [step 5 of the guide](https://documentation.onesignal.com/docs/ios-sdk-setup#step-5---add-the-onesignal-initialization-code) to complete installation.
 
 Options:
@@ -28,9 +32,10 @@ Options:
 
 Arguments:
 * Path - path to the project directory
-* Entrypoint - Name of the target XCProject (iOS) or appclassfile (Android)
+* Entrypoint - Name of the target XCProject (iOS) or Application class file directory (Android) if no application class is available OneSignal will create it in the directory and name file provided
 * LANG - programming language to use for ios (objc, swift) or Android (java, kotlin)
 * APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
 
 Example Usage
 `bin/onesignal install-sdk --type ios ../MyAppDir MyApp objc`
+`bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
