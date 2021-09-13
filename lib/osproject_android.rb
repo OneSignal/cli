@@ -44,11 +44,10 @@ class OSProject::GoogleAndroid < OSProject
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
     begin 
-      puts 'I am before the raise.'  
       content = File.read(dir + '/' + app_class_location)
     rescue
       directory_split = app_class_location.split('/', -1)
-      puts directory_split
+
       application_name = directory_split[-1].split(".")[0]
       com_index = directory_split.index "com"
       range = directory_split.length - 2
