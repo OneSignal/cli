@@ -37,5 +37,5 @@ Arguments:
 * APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
 
 Example Usage
-`bin/onesignal install-sdk --type ios ../MyAppDir MyApp objc`
-`bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
+* iOS: `bin/onesignal install-sdk --type ios ../MyAppDir MyApp objc`
+* Android: `bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
