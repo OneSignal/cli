@@ -32,7 +32,7 @@ Options:
 
 Arguments:
 * Path - path to the project directory
-* Entrypoint - Name of the target XCProject (iOS) or Application class file directory (Android) if no application class is available OneSignal will create it in the directory and name file provided
+* Entrypoint - Name of the target XCProject (iOS) or Application class file directory (Android) if no application class is available OneSignal will create it in the directory and name file provided. For the CLI to create the file for you, you will need to still put the directory and file name where you want the Application file to be created
 * LANG - programming language to use for ios (objc, swift) or Android (java, kotlin)
 * APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
 
