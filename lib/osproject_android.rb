@@ -34,11 +34,19 @@ class OSProject::GoogleAndroid < OSProject
                   "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
     # add deps to /app/build.gradle
     check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+                  "implementation 'androidx.appcompat:appcompat:[^']*'",
+                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+                  "implementation \"androidx.appcompat:appcompat:[^']*\"",
+                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
+
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation 'com.google.android.material:material:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
     check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation \"com.google.android.material:material:[^']*\"",
                   "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
+
     check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "apply plugin: 'com.android.application'",
                   "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
