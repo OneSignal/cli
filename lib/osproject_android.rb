@@ -20,26 +20,29 @@ class OSProject::GoogleAndroid < OSProject
     #
     # TODO: this gradle tack is a very brittle approach.
     # add deps to /build.gradle
-    _insert_lines(dir + '/build.gradle', 
+    check_insert_lines(dir + '/build.gradle', 
+                  Regexp.quote("mavenCentral()"),
+                  "gradlePluginPortal()")
+    check_insert_lines(dir + '/build.gradle', 
                   Regexp.quote("jcenter()"),
                   "gradlePluginPortal()")
-    _insert_lines(dir + '/build.gradle',
+    check_insert_lines(dir + '/build.gradle',
                   "classpath 'com.android.tools.build:gradle:[^']*'",
                   "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'")
-    _insert_lines(dir + '/build.gradle',
+    check_insert_lines(dir + '/build.gradle',
                   "classpath \"com.android.tools.build:gradle:[^']*\"",
                   "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
     # add deps to /app/build.gradle
-    _insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation 'com.google.android.material:material:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    _insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "implementation \"com.google.android.material:material:[^']*\"",
                   "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
-    _insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "apply plugin: 'com.android.application'",
                   "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
-    _insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
                   "id 'com.android.application'",
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
@@ -81,32 +84,32 @@ class OSProject::GoogleAndroid < OSProject
 
     # add OS API key to Application class
     if "#{self.lang}" == "java"
-      _insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+;",
                 "import com.onesignal.OneSignal;")
-      _insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(dir + '/' + app_class_location,
                 "public class [a-zA-Z\s]+{",
                 "\s\s\s\sprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
-      _sub_file(dir + '/' + app_class_location,
+      check_insert_block(dir + '/' + app_class_location,
                 /super.onCreate\(\);\s/,
-               "super.onCreate();
-        // Enable verbose OneSignal logging to debug issues if needed.
+               "OneSignal.setAppId",
+               "\s\s// Enable verbose OneSignal logging to debug issues if needed.
         // It is recommended you remove this after validating your implementation.
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
         // OneSignal Initialization
         OneSignal.initWithContext(this);
         OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
     elsif "#{self.lang}" == "kotlin"
-      _insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+",
                 'import com.onesignal.OneSignal')
-      _insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(dir + '/' + app_class_location,
                 "class [a-zA-Z\s:()]+{",
                 "\s\s\s\sprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
-      _sub_file(dir + '/' + app_class_location,
-                       /super.onCreate\(\)\s/,
-                      "super.onCreate()
-        // Enable verbose OneSignal logging to debug issues if needed.
+      check_insert_block(dir + '/' + app_class_location,
+                 /super.onCreate\(\)\s/,
+                 "OneSignal.setAppId",
+                 "\s\s// Enable verbose OneSignal logging to debug issues if needed.
         // It is recommended you remove this after validating your implementation.
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
         // OneSignal Initialization
@@ -114,6 +117,18 @@ class OSProject::GoogleAndroid < OSProject
         OneSignal.setAppId(oneSignalAppId)\n")
     else 
       raise "Don't know to handle #{lang}"
+    end
+  end
+
+  def check_insert_lines(directory, regex, addition)
+    if !File.readlines(directory).any?{ |l| l[addition] }
+      _insert_lines(directory, regex, addition)
+    end
+  end
+
+  def check_insert_block(directory, regex, addition, addition_block)
+    if !File.readlines(directory).any?{ |l| l[addition] }
+      _insert_lines(directory, regex, addition_block)
     end
   end
 
