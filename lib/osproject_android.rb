@@ -16,44 +16,65 @@ class OSProject::GoogleAndroid < OSProject
     end
 
     app_dir = app_class_location.split('/', -1)[0]
+    build_gradle_dir = dir + '/build.gradle'
+    build_gradle_app_dir = dir + '/' + app_dir + '/build.gradle'
 
-    #
+    begin 
+      content = File.read(build_gradle_dir)
+    rescue
+      puts "File not found: " + build_gradle_dir 
+      puts "Provide first param project with directory path"
+      return
+    end
+
+    begin 
+      content = File.read(build_gradle_app_dir)
+    rescue
+      puts "Directoy not found: " + dir + '/' + app_dir 
+      puts "Provide second param Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
+      puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
+      return
+    end
+
     # TODO: this gradle tack is a very brittle approach.
     # add deps to /build.gradle
-    check_insert_lines(dir + '/build.gradle', 
+    check_insert_lines(build_gradle_dir, 
                   Regexp.quote("mavenCentral()"),
                   "gradlePluginPortal()")
-    check_insert_lines(dir + '/build.gradle', 
+    check_insert_lines(build_gradle_dir, 
                   Regexp.quote("jcenter()"),
                   "gradlePluginPortal()")
-    check_insert_lines(dir + '/build.gradle',
+
+    check_insert_lines(build_gradle_dir,
                   "classpath 'com.android.tools.build:gradle:[^']*'",
                   "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'")
-    check_insert_lines(dir + '/build.gradle',
+    check_insert_lines(build_gradle_dir,
                   "classpath \"com.android.tools.build:gradle:[^']*\"",
                   "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
+
     # add deps to /app/build.gradle
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "implementation 'androidx.appcompat:appcompat:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "implementation \"androidx.appcompat:appcompat:[^']*\"",
                   "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
 
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "implementation 'com.google.android.material:material:[^']*'",
                   "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "implementation \"com.google.android.material:material:[^']*\"",
                   "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
 
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "apply plugin: 'com.android.application'",
                   "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
-    check_insert_lines(dir + '/' + app_dir + '/build.gradle',
+    check_insert_lines(build_gradle_app_dir,
                   "id 'com.android.application'",
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
 
+    application_class_created = false
     begin 
       content = File.read(dir + '/' + app_class_location)
     rescue
@@ -88,6 +109,7 @@ class OSProject::GoogleAndroid < OSProject
       _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
                 "<application",
                 "\s\sandroid:name=\"#{application_name}\"")
+      application_class_created = true
     end 
 
     # add OS API key to Application class
@@ -126,6 +148,22 @@ class OSProject::GoogleAndroid < OSProject
     else 
       raise "Don't know to handle #{lang}"
     end
+
+    puts ""
+    puts " *** ONESIGNAL INTEGRATION ENDED SUCCESSSFULLY! ***"
+    puts ""
+    puts " * Changes made to the project and app build.gradle file."
+    puts "   - gradlePluginPortal() added as repository provider"
+    puts "   - classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" dependency added"
+    puts "   - implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' dependency added"
+    puts "   - plugin id 'com.onesignal.androidsdk.onesignal-gradle-plugin' added"
+    puts ""
+    if application_class_created
+      puts " * Created " + application_name + " Application class at " + dir + '/' + app_class_location
+      puts " * Added Application class to Manifest "
+    end
+    puts " * OneSignal init configured inside Application onCreate method"
+
   end
 
   def check_insert_lines(directory, regex, addition)
