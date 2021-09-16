@@ -32,7 +32,6 @@ For Android the command will:
 * Add the OneSignal initialization code under Application Class. If no application class is available, the CLI tool will create it for you at the given path.
 
 Note: Re sync gradle might be needed after calling install-sdk
-Warning: Windows not compatible yet
 
 Options:
 * type - iOS or Android. Type of SDK to install. Required.
@@ -49,4 +48,5 @@ Example Usage
 * Android: `bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
 
 ## Limitations / Comming Soon
-* React Native and Flutter aren't currently supported. Stay tuned for support in a future release! 
+* React Native, Flutter, Unity, Xamarin, and Cordova aren't currently supported. Stay tuned for support in a future release! 
+* macOS is currently the only officially supported platform.
