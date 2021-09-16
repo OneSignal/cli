@@ -12,8 +12,8 @@ The OneSignal CLI is a tool to work with OneSignal projects.
 
 ## Available commands
 
-* bin/onesignal help Lists the available commands in the OneSignal CLI
-* bin/onesignal install-sdk  Install the OneSignal SDK in the project
+* `bin/onesignal help` Lists the available commands in the OneSignal CLI
+* `bin/onesignal install-sdk`  Install the OneSignal SDK in the project
 
 ## Installation Command
 This command can be used to add the OneSignal SDK to your mobile application project.
