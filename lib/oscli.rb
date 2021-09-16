@@ -67,6 +67,12 @@ class HelpCommand < Clamp::Command
   end
 end
 
+class AvailableCommandsCommand < Clamp::Command
+  def execute
+    OSCLI.availableCommandsText
+  end
+end
+
 class OSCLI < Clamp::Command
     option ["--version", "-v"], :flag, "Show version" do
       puts "0.0.0"
@@ -76,11 +82,16 @@ class OSCLI < Clamp::Command
       OSCLI.helptext
       exit(0)
     end
-    self.default_subcommand = "help"
+    self.default_subcommand = "available-commands"
+    subcommand "available-commands", "Lists the available commands in the OneSignal CLI", AvailableCommandsCommand
     subcommand "help", "Lists the available commands in the OneSignal CLI", HelpCommand
     subcommand "install-sdk", "Add the OneSignal SDK to the project", InstallCommand
 
     def self.helptext
+      puts "usage: bin/onesignal [--version] [--help] [install-sdk --type <type> <path> <entrypoint> <lang> <appId>]"
+    end
+
+    def self.availableCommandsText
       puts <<~HELP 
         \e[1mAvailable Commands:\e[0m 
         \e[1minstall-sdk:\e[0m  Install the OneSignal SDK in the project
