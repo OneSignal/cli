@@ -47,3 +47,6 @@ Arguments:
 Example Usage
 * iOS: `bin/onesignal install-sdk --type ios ../MyAppDir MyApp objc`
 * Android: `bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
+
+## Limitations / Comming Soon
+* React Native and Flutter aren't currently supported. Stay tuned for support in a future release! 
