@@ -49,4 +49,4 @@ Example Usage
 
 ## Limitations / Comming Soon
 * React Native, Flutter, Unity, Xamarin, and Cordova aren't currently supported. Stay tuned for support in a future release! 
-* macOS is currently the only officially supported platform.
+* macOS is currently the only officially supported operating system.
