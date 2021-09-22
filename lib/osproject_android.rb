@@ -30,7 +30,7 @@ class OSProject::GoogleAndroid < OSProject
     begin 
       content = File.read(build_gradle_app_dir)
     rescue
-      puts "Directoy not found: " + dir + '/' + app_dir 
+      puts "Directory not found: " + dir + '/' + app_dir 
       puts "Provide second param Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
       return
@@ -152,11 +152,13 @@ class OSProject::GoogleAndroid < OSProject
     puts ""
     puts " *** ONESIGNAL INTEGRATION ENDED SUCCESSSFULLY! ***"
     puts ""
-    puts " * Changes made to the project and app build.gradle file."
-    puts "   - gradlePluginPortal() added as repository provider"
-    puts "   - classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" dependency added"
-    puts "   - implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' dependency added"
-    puts "   - plugin id 'com.onesignal.androidsdk.onesignal-gradle-plugin' added"
+    puts " * The following changes were made to project build.gradle"
+    puts "   - Added repository provider gradlePluginPortal()"
+    puts "   - Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\""
+    puts ""
+    puts " * The following changes were made to app build.gradle"
+    puts "   - Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin'"
+    puts "   - Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'"
     puts ""
     if application_class_created
       puts " * Created " + application_name + " Application class at " + dir + '/' + app_class_location
