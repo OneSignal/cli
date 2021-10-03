@@ -20,23 +20,25 @@ end
 #   Takes either a replacement string or a block to pass to String.sub!
 def _sub_file(path, match, replace=nil, &block)
   content = File.read(path)
+  result = nil
   if (replace == nil && block == nil) || (replace != nil && block != nil)
     raise
   elsif replace
-    content.sub!(match, replace)
+    result = content.sub!(match, replace)
   elsif block
-    content.sub!(match, &block)
+    result = content.sub!(match, &block)
   end
   srcfile = File.open(path, 'w')
   srcfile.write(content)
   srcfile.close
+  return result
 end
 
 # @!method _insert_lines
 #   Insert line, or array of lines, after a given marker.  Will insert at the same indent level.
 def _insert_lines(file, match, insert)
   if insert.is_a? Array
-    _sub_file(file, /^(\s*)(#{match})/) do |line|
+    return _sub_file(file, /^(\s*)(#{match})/) do |line|
       indent = $1 || ''
       puts "indent: ", indent.length
       prevln = $2 || ''
@@ -46,6 +48,6 @@ def _insert_lines(file, match, insert)
       return retline 
     end
   else
-    _sub_file(file, /^(\s*)(#{match})/, '\1\2' + "\n" + '\1' + insert)
+    return _sub_file(file, /^(\s*)(#{match})/, '\1\2' + "\n" + '\1' + insert)
   end
 end

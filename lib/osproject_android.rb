@@ -36,43 +36,64 @@ class OSProject::GoogleAndroid < OSProject
       return
     end
 
+    success_mesage = "*** OneSignal integration completed successfully! ***\n\n"
+    gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
+    os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"
+    app_os_gradle_plugin_mesage = " * Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin' to app build.gradle\n"
+    app_os_dependency_message = " * Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' to app build.gradle \n"
+
     # TODO: this gradle tack is a very brittle approach.
     # add deps to /build.gradle
-    check_insert_lines(build_gradle_dir, 
+    success_mesage += check_insert_lines(build_gradle_dir,
                   Regexp.quote("mavenCentral()"),
-                  "gradlePluginPortal()")
-    check_insert_lines(build_gradle_dir, 
-                  Regexp.quote("jcenter()"),
-                  "gradlePluginPortal()")
+                  "gradlePluginPortal()",
+                  gradle_plugin_mesage)
 
-    check_insert_lines(build_gradle_dir,
+    success_mesage += check_insert_lines(build_gradle_dir,
+                  Regexp.quote("jcenter()"),
+                  "gradlePluginPortal()",
+                  gradle_plugin_mesage)
+
+    success_mesage += check_insert_lines(build_gradle_dir,
                   "classpath 'com.android.tools.build:gradle:[^']*'",
-                  "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'")
-    check_insert_lines(build_gradle_dir,
+                  "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'",
+                  os_gradle_plugin_mesage)
+
+    success_mesage += check_insert_lines(build_gradle_dir,
                   "classpath \"com.android.tools.build:gradle:[^']*\"",
-                  "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"")
+                  "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"",
+                  os_gradle_plugin_mesage)
 
     # add deps to /app/build.gradle
-    check_insert_lines(build_gradle_app_dir,
-                  "implementation 'androidx.appcompat:appcompat:[^']*'",
-                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    check_insert_lines(build_gradle_app_dir,
+    success_mesage += check_insert_lines(build_gradle_app_dir,
                   "implementation \"androidx.appcompat:appcompat:[^']*\"",
-                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
+                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
+                  app_os_dependency_message)
 
-    check_insert_lines(build_gradle_app_dir,
-                  "implementation 'com.google.android.material:material:[^']*'",
-                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'")
-    check_insert_lines(build_gradle_app_dir,
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+                  "implementation 'androidx.appcompat:appcompat:[^']*'",
+                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
+                  app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
                   "implementation \"com.google.android.material:material:[^']*\"",
-                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"")
+                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
+                  app_os_dependency_message)
 
-    check_insert_lines(build_gradle_app_dir,
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+                  "implementation 'com.google.android.material:material:[^']*'",
+                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
+                  app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
                   "apply plugin: 'com.android.application'",
-                  "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
-    check_insert_lines(build_gradle_app_dir,
+                  "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
+                  app_os_gradle_plugin_mesage)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
                   "id 'com.android.application'",
-                  "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'")
+                  "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
+                  app_os_gradle_plugin_mesage)
 
     application_class_created = false
     begin 
@@ -90,18 +111,18 @@ class OSProject::GoogleAndroid < OSProject
           f.write("package #{package_directory.join(".")};\n\n")
           f.write("import android.app.Application;\n\n")
           f.write("public class #{application_name} extends Application {\n")
-          f.write("\s\s\s\s@Override\n")
-          f.write("\s\s\s\spublic void onCreate() {\n")
-          f.write("\s\s\s\s\s\ssuper.onCreate();\n")
-          f.write("\s\s\s\s}\n")
+          f.write("\t@Override\n")
+          f.write("\tpublic void onCreate() {\n")
+          f.write("\t\tsuper.onCreate();\n")
+          f.write("\t}\n")
           f.write("}")
         elsif "#{self.lang}" == "kotlin"
           f.write("package #{package_directory.join(".")}\n\n")
           f.write("import android.app.Application\n\n")
           f.write("class #{application_name} : Application() {\n")
-          f.write("\s\s\s\soverride fun onCreate() {\n")
-          f.write("\s\s\s\s\s\ssuper.onCreate()\n")
-          f.write("\s\s\s\s}\n")
+          f.write("\toverride fun onCreate() {\n")
+          f.write("\t\tsuper.onCreate()\n")
+          f.write("\t}\n")
           f.write("}")
         end
       end
@@ -112,34 +133,41 @@ class OSProject::GoogleAndroid < OSProject
       application_class_created = true
     end 
 
+    if application_class_created
+      success_mesage += " * Created " + application_name + " Application class at " + dir + '/' + app_class_location + "\n"
+      success_mesage += " * Added Application class to AndroidManifest file\n"
+    end
+
     # add OS API key to Application class
     if "#{self.lang}" == "java"
-      check_insert_lines(dir + '/' + app_class_location,
+      success_mesage += check_insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+;",
-                "import com.onesignal.OneSignal;")
+                "import com.onesignal.OneSignal;",
+                " * OneSignal init method configured inside Application's onCreate method")
       check_insert_lines(dir + '/' + app_class_location,
                 "public class [a-zA-Z\s]+{",
-                "\s\s\s\sprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
+                "\tprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
       check_insert_block(dir + '/' + app_class_location,
                 /super.onCreate\(\);\s/,
                "OneSignal.setAppId",
-               "\s\s// Enable verbose OneSignal logging to debug issues if needed.
+        "// Enable verbose OneSignal logging to debug issues if needed.
         // It is recommended you remove this after validating your implementation.
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
         // OneSignal Initialization
         OneSignal.initWithContext(this);
         OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
     elsif "#{self.lang}" == "kotlin"
-      check_insert_lines(dir + '/' + app_class_location,
+      success_mesage += check_insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+",
-                'import com.onesignal.OneSignal')
+                'import com.onesignal.OneSignal',
+                " * OneSignal init method configured inside Application's onCreate method")
       check_insert_lines(dir + '/' + app_class_location,
                 "class [a-zA-Z\s:()]+{",
-                "\s\s\s\sprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
+                "\tprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
       check_insert_block(dir + '/' + app_class_location,
                  /super.onCreate\(\)\s/,
                  "OneSignal.setAppId",
-                 "\s\s// Enable verbose OneSignal logging to debug issues if needed.
+        "// Enable verbose OneSignal logging to debug issues if needed.
         // It is recommended you remove this after validating your implementation.
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
         // OneSignal Initialization
@@ -149,35 +177,30 @@ class OSProject::GoogleAndroid < OSProject
       raise "Don't know to handle #{lang}"
     end
 
-    puts ""
-    puts " *** OneSignal integration completed successfully! ***"
-    puts ""
-    puts " * The following changes were made to project build.gradle"
-    puts "   - Added repository provider gradlePluginPortal()"
-    puts "   - Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\""
-    puts ""
-    puts " * The following changes were made to app build.gradle"
-    puts "   - Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin'"
-    puts "   - Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'"
-    puts ""
-    if application_class_created
-      puts " * Created " + application_name + " Application class at " + dir + '/' + app_class_location
-      puts " * Added Application class to Manifest "
+    if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
+      puts "*** OneSignal already integrated, no changes needed ***\n\n"
+    else
+      puts success_mesage
     end
-    puts " * OneSignal init configured inside Application onCreate method"
-
   end
 
-  def check_insert_lines(directory, regex, addition)
+  def check_insert_lines(directory, regex, addition, success_mesage = "")
     if !File.readlines(directory).any?{ |l| l[addition] }
-      _insert_lines(directory, regex, addition)
+      result = _insert_lines(directory, regex, addition)
+      if (result.nil?)
+        return ""
+      end
+      return success_mesage
     end
+    return ""
   end
 
-  def check_insert_block(directory, regex, addition, addition_block)
+  def check_insert_block(directory, regex, addition, addition_block, success_mesage = "")
     if !File.readlines(directory).any?{ |l| l[addition] }
       _insert_lines(directory, regex, addition_block)
+      return success_mesage
     end
+    return ""
   end
 
   def has_sdk?
