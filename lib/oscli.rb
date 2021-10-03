@@ -18,9 +18,10 @@ class InstallCommand < Clamp::Command
         'java' => :java,
         'kotlin' => :kotlin
       }
-      language = langmap[lang]
 
       if type == 'ios'
+        language = langmap[lang]
+
         unless language == :objc || language == :swift
           puts 'Invalid language (objc or swift)'
           exit(1)
@@ -32,11 +33,7 @@ class InstallCommand < Clamp::Command
         xcodeproj_path = path + '/' + entrypoint + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path)
       elsif type == 'android'
-        unless language == :java || language == :kotlin
-          puts 'Invalid language (java or kotlin)'
-          exit(1)
-        end
-        OSProject::GoogleAndroid.new(path, entrypoint, language, appid).add_sdk!()
+        OSProject::GoogleAndroid.new(path, entrypoint, appid).add_sdk!()
       elsif !type
         puts 'Please provide a project type (ios or android) with the --type option'
       else
