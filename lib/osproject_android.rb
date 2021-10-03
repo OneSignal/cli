@@ -4,8 +4,17 @@ require_relative 'osproject_helpers'
 class OSProject::GoogleAndroid < OSProject
   attr_accessor :app_class_location
 
-  def initialize(dir, app_class_location, lang, os_app_id)
+  def initialize(dir, app_class_location, os_app_id)
     @app_class_location = app_class_location
+
+    directory_split = app_class_location.split('/', -1)
+    lang = directory_split[-1].split(".")[1]
+
+    unless lang == "java" || lang == "kt"
+      puts 'Invalid language (java or kotlin)'
+      exit(1)
+    end
+
     super(:googleandroid, dir, lang, os_app_id)
   end
   
@@ -116,7 +125,7 @@ class OSProject::GoogleAndroid < OSProject
           f.write("\t\tsuper.onCreate();\n")
           f.write("\t}\n")
           f.write("}")
-        elsif "#{self.lang}" == "kotlin"
+        elsif "#{self.lang}" == "kt"
           f.write("package #{package_directory.join(".")}\n\n")
           f.write("import android.app.Application\n\n")
           f.write("class #{application_name} : Application() {\n")
@@ -129,7 +138,7 @@ class OSProject::GoogleAndroid < OSProject
 
       _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
                 "<application",
-                "\s\sandroid:name=\"#{application_name}\"")
+                "\s\sandroid:name=\".#{application_name}\"")
       application_class_created = true
     end 
 
@@ -156,7 +165,7 @@ class OSProject::GoogleAndroid < OSProject
         // OneSignal Initialization
         OneSignal.initWithContext(this);
         OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
-    elsif "#{self.lang}" == "kotlin"
+    elsif "#{self.lang}" == "kt"
       success_mesage += check_insert_lines(dir + '/' + app_class_location,
                 "import [a-zA-Z.]+",
                 'import com.onesignal.OneSignal',
