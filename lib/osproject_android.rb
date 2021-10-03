@@ -45,6 +45,34 @@ class OSProject::GoogleAndroid < OSProject
       return
     end
 
+    application_class_created = false
+    application_class_exists = true
+    begin 
+      content = File.read(dir + '/' + app_class_location)
+    rescue
+      directory_split = app_class_location.split('/', -1)
+
+      application_name = directory_split[-1].split(".")[0]
+      com_index = directory_split.index "com"
+      range = directory_split.length - 2
+      package_directory = directory_split.slice(com_index..range)
+     
+      puts "Application class will be created under #{dir}/#{app_class_location}\nThis is needed for SDK init code. By saying (N) you can setup the init code by following https://documentation.onesignal.com/docs/android-sdk-setup#step-3-add-required-code.\nProceed creation? (Y/N)"
+      user_response = STDIN.gets.chomp.downcase
+
+      unless user_response == "y" || user_response == "yes" || user_response == "n" || user_response == "no"
+        puts 'Invalid response (Y/N)'
+        exit(1)
+      end
+
+      if user_response == "y" || user_response == "yes"
+        create_application_file(package_directory, dir, app_dir, app_class_location, application_name, "#{self.lang}")
+        application_class_created = true
+      else
+        application_class_exists = false
+      end
+    end 
+
     success_mesage = "*** OneSignal integration completed successfully! ***\n\n"
     gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
     os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"
@@ -104,87 +132,15 @@ class OSProject::GoogleAndroid < OSProject
                   "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
                   app_os_gradle_plugin_mesage)
 
-    application_class_created = false
-    begin 
-      content = File.read(dir + '/' + app_class_location)
-    rescue
-      directory_split = app_class_location.split('/', -1)
-
-      application_name = directory_split[-1].split(".")[0]
-      com_index = directory_split.index "com"
-      range = directory_split.length - 2
-      package_directory = directory_split.slice(com_index..range)
-     
-      File.open(dir + '/' + app_class_location, "w") do |f| 
-        if "#{self.lang}" == "java"    
-          f.write("package #{package_directory.join(".")};\n\n")
-          f.write("import android.app.Application;\n\n")
-          f.write("public class #{application_name} extends Application {\n")
-          f.write("\t@Override\n")
-          f.write("\tpublic void onCreate() {\n")
-          f.write("\t\tsuper.onCreate();\n")
-          f.write("\t}\n")
-          f.write("}")
-        elsif "#{self.lang}" == "kt"
-          f.write("package #{package_directory.join(".")}\n\n")
-          f.write("import android.app.Application\n\n")
-          f.write("class #{application_name} : Application() {\n")
-          f.write("\toverride fun onCreate() {\n")
-          f.write("\t\tsuper.onCreate()\n")
-          f.write("\t}\n")
-          f.write("}")
-        end
-      end
-
-      _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
-                "<application",
-                "\s\sandroid:name=\".#{application_name}\"")
-      application_class_created = true
-    end 
+    if application_class_exists
+      success_mesage += add_application_init_code(dir, app_class_location, lang)
+    end
 
     if application_class_created
       success_mesage += " * Created " + application_name + " Application class at " + dir + '/' + app_class_location + "\n"
       success_mesage += " * Added Application class to AndroidManifest file\n"
     end
 
-    # add OS API key to Application class
-    if "#{self.lang}" == "java"
-      success_mesage += check_insert_lines(dir + '/' + app_class_location,
-                "import [a-zA-Z.]+;",
-                "import com.onesignal.OneSignal;",
-                " * OneSignal init method configured inside Application's onCreate method")
-      check_insert_lines(dir + '/' + app_class_location,
-                "public class [a-zA-Z\s]+{",
-                "\tprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
-      check_insert_block(dir + '/' + app_class_location,
-                /super.onCreate\(\);\s/,
-               "OneSignal.setAppId",
-        "// Enable verbose OneSignal logging to debug issues if needed.
-        // It is recommended you remove this after validating your implementation.
-        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
-        // OneSignal Initialization
-        OneSignal.initWithContext(this);
-        OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
-    elsif "#{self.lang}" == "kt"
-      success_mesage += check_insert_lines(dir + '/' + app_class_location,
-                "import [a-zA-Z.]+",
-                'import com.onesignal.OneSignal',
-                " * OneSignal init method configured inside Application's onCreate method")
-      check_insert_lines(dir + '/' + app_class_location,
-                "class [a-zA-Z\s:()]+{",
-                "\tprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
-      check_insert_block(dir + '/' + app_class_location,
-                 /super.onCreate\(\)\s/,
-                 "OneSignal.setAppId",
-        "// Enable verbose OneSignal logging to debug issues if needed.
-        // It is recommended you remove this after validating your implementation.
-        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
-        // OneSignal Initialization
-        OneSignal.initWithContext(this)
-        OneSignal.setAppId(oneSignalAppId)\n")
-    else 
-      raise "Don't know to handle #{lang}"
-    end
 
     if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
       puts "*** OneSignal already integrated, no changes needed ***\n\n"
@@ -210,6 +166,76 @@ class OSProject::GoogleAndroid < OSProject
       return success_mesage
     end
     return ""
+  end
+
+  def create_application_file(package_directory, dir, app_dir, app_class_location, application_name, lang)
+    File.open(dir + '/' + app_class_location, "w") do |f| 
+      if lang == "java"    
+        f.write("package #{package_directory.join(".")};\n\n")
+        f.write("import android.app.Application;\n\n")
+        f.write("public class #{application_name} extends Application {\n")
+        f.write("\t@Override\n")
+        f.write("\tpublic void onCreate() {\n")
+        f.write("\t\tsuper.onCreate();\n")
+        f.write("\t}\n")
+        f.write("}")
+      elsif lang == "kt"
+        f.write("package #{package_directory.join(".")}\n\n")
+        f.write("import android.app.Application\n\n")
+        f.write("class #{application_name} : Application() {\n")
+        f.write("\toverride fun onCreate() {\n")
+        f.write("\t\tsuper.onCreate()\n")
+        f.write("\t}\n")
+        f.write("}")
+      end
+    end
+
+    _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
+              "<application",
+              "\s\sandroid:name=\".#{application_name}\"")
+  end
+
+  def add_application_init_code(dir, app_class_location, lang)
+    success_mesage = ""
+    # add OS API key to Application class
+    if lang == "java"
+      success_mesage = check_insert_lines(dir + '/' + app_class_location,
+                "import [a-zA-Z.]+;",
+                "import com.onesignal.OneSignal;",
+                " * OneSignal init method configured inside Application's onCreate method\n")
+      check_insert_lines(dir + '/' + app_class_location,
+                "public class [a-zA-Z\s]+{",
+                "\tprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
+      check_insert_block(dir + '/' + app_class_location,
+                /super.onCreate\(\);\s/,
+                "OneSignal.setAppId",
+        "// Enable verbose OneSignal logging to debug issues if needed.
+        // It is recommended you remove this after validating your implementation.
+        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
+        // OneSignal Initialization
+        OneSignal.initWithContext(this);
+        OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
+    elsif lang == "kt"
+      success_mesage = check_insert_lines(dir + '/' + app_class_location,
+                "import [a-zA-Z.]+",
+                'import com.onesignal.OneSignal',
+                " * OneSignal init method configured inside Application's onCreate method\n")
+      check_insert_lines(dir + '/' + app_class_location,
+                "class [a-zA-Z\s:()]+{",
+                "\tprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
+      check_insert_block(dir + '/' + app_class_location,
+                  /super.onCreate\(\)\s/,
+                  "OneSignal.setAppId",
+        "// Enable verbose OneSignal logging to debug issues if needed.
+        // It is recommended you remove this after validating your implementation.
+        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
+        // OneSignal Initialization
+        OneSignal.initWithContext(this)
+        OneSignal.setAppId(oneSignalAppId)\n")
+    else 
+      raise "Don't know to handle #{lang}"
+    end
+    return success_mesage
   end
 
   def has_sdk?
