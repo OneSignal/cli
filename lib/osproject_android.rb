@@ -4,11 +4,12 @@ require_relative 'osproject_helpers'
 class OSProject::GoogleAndroid < OSProject
   attr_accessor :app_class_location
 
-  def initialize(dir, app_class_location, os_app_id)
+  def initialize(app_class_location, os_app_id)
     @app_class_location = app_class_location
 
     directory_split = app_class_location.split('/', -1)
     lang = directory_split[-1].split(".")[1]
+    dir = Dir.pwd
 
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
