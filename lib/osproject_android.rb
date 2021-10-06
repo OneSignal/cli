@@ -54,10 +54,10 @@ class OSProject::GoogleAndroid < OSProject
       directory_split = app_class_location.split('/', -1)
 
       application_name = directory_split[-1].split(".")[0]
-      com_index = directory_split.index "com"
+      
       range = directory_split.length - 2
-      package_directory = directory_split.slice(com_index..range)
-     
+      package_directory = directory_split.slice(range - 2..range)
+    
       puts "Application class will be created under #{dir}/#{app_class_location}\nThis is needed for SDK init code. By saying (N) you can setup the init code by following https://documentation.onesignal.com/docs/android-sdk-setup#step-3-add-required-code.\nProceed with creation? (Y/N)"
       user_response = STDIN.gets.chomp.downcase
 
