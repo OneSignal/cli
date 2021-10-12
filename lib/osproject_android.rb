@@ -24,9 +24,10 @@ class OSProject::GoogleAndroid < OSProject
       raise 
     end
 
-    app_dir = app_class_location.split('/', -1)[0]
-    build_gradle_dir = dir + '/build.gradle'
-    build_gradle_app_dir = dir + '/' + app_dir + '/build.gradle'
+    project_dir = dir
+    app_dir = app_class_location.split('/')[0]
+    build_gradle_dir = project_dir + '/build.gradle'
+    build_gradle_app_dir = project_dir + '/' + app_dir + '/build.gradle'
 
     begin 
       content = File.read(build_gradle_dir)
@@ -39,7 +40,7 @@ class OSProject::GoogleAndroid < OSProject
     begin 
       content = File.read(build_gradle_app_dir)
     rescue
-      puts "Directory not found: " + dir + '/' + app_dir 
+      puts "Directory not found: " + project_dir + '/' + app_dir 
       puts "Provide second param Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
       return
@@ -48,14 +49,17 @@ class OSProject::GoogleAndroid < OSProject
     application_class_created = false
     application_class_exists = true
     begin 
-      content = File.read(dir + '/' + app_class_location)
+      content = File.read(project_dir + '/' + app_class_location)
     rescue
-      directory_split = app_class_location.split('/', -1)
+      
+      app_directory_split = app_class_location.split('/', -1)
 
-      application_name = directory_split[-1].split(".")[0]
-      com_index = directory_split.index "com"
-      range = directory_split.length - 2
-      package_directory = directory_split.slice(com_index..range)
+      application_name = app_directory_split[-1].split(".")[0]
+      # Android directory common names come in the structure of app/src/main/language
+      # Get main package index and calculate application package start index
+      lang_index = (app_directory_split.index "main") + 2
+      # Get Package directory in the form of ex: com.orgname.appname
+      package_directory = app_directory_split.slice(lang_index..-2).join(".")
      
       puts "Application class will be created under #{dir}/#{app_class_location}\nThis is needed for SDK init code. By saying (N) you can setup the init code by following https://documentation.onesignal.com/docs/android-sdk-setup#step-3-add-required-code.\nProceed with creation? (Y/N)"
       user_response = STDIN.gets.chomp.downcase
@@ -66,7 +70,7 @@ class OSProject::GoogleAndroid < OSProject
       end
 
       if user_response == "y" || user_response == "yes"
-        create_application_file(package_directory, dir, app_dir, app_class_location, application_name, "#{self.lang}")
+        create_application_file(project_dir, app_dir, package_directory, app_class_location, application_name, "#{self.lang}")
         application_class_created = true
       else
         application_class_exists = false
@@ -133,14 +137,13 @@ class OSProject::GoogleAndroid < OSProject
                   app_os_gradle_plugin_mesage)
 
     if application_class_exists
-      success_mesage += add_application_init_code(dir, app_class_location, lang)
+      success_mesage += add_application_init_code(project_dir, app_class_location, lang)
     end
 
     if application_class_created
-      success_mesage += " * Created " + application_name + " Application class at " + dir + '/' + app_class_location + "\n"
+      success_mesage += " * Created " + application_name + " Application class at " + project_dir + '/' + app_class_location + "\n"
       success_mesage += " * Added Application class to AndroidManifest file\n"
     end
-
 
     if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
       puts "*** OneSignal already integrated, no changes needed ***\n\n"
@@ -168,10 +171,10 @@ class OSProject::GoogleAndroid < OSProject
     return ""
   end
 
-  def create_application_file(package_directory, dir, app_dir, app_class_location, application_name, lang)
-    File.open(dir + '/' + app_class_location, "w") do |f| 
+  def create_application_file(project_dir, app_dir, package_directory, app_class_location, application_name, lang)
+    File.open(project_dir + '/' + app_class_location, "w") do |f| 
       if lang == "java"    
-        f.write("package #{package_directory.join(".")};\n\n")
+        f.write("package #{package_directory};\n\n")
         f.write("import android.app.Application;\n\n")
         f.write("public class #{application_name} extends Application {\n")
         f.write("\t@Override\n")
@@ -180,7 +183,7 @@ class OSProject::GoogleAndroid < OSProject
         f.write("\t}\n")
         f.write("}")
       elsif lang == "kt"
-        f.write("package #{package_directory.join(".")}\n\n")
+        f.write("package #{package_directory}\n\n")
         f.write("import android.app.Application\n\n")
         f.write("class #{application_name} : Application() {\n")
         f.write("\toverride fun onCreate() {\n")
@@ -190,23 +193,23 @@ class OSProject::GoogleAndroid < OSProject
       end
     end
 
-    _insert_lines(dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
+    _insert_lines(project_dir + '/' + app_dir + '/src/main/AndroidManifest.xml',
               "<application",
               "\s\sandroid:name=\".#{application_name}\"")
   end
 
-  def add_application_init_code(dir, app_class_location, lang)
+  def add_application_init_code(project_dir, app_class_location, lang)
     success_mesage = ""
     # add OS API key to Application class
     if lang == "java"
-      success_mesage = check_insert_lines(dir + '/' + app_class_location,
+      success_mesage = check_insert_lines(project_dir + '/' + app_class_location,
                 "import [a-zA-Z.]+;",
                 "import com.onesignal.OneSignal;",
                 " * OneSignal init method configured inside Application's onCreate method\n")
-      check_insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(project_dir + '/' + app_class_location,
                 "public class [a-zA-Z\s]+{",
                 "\tprivate static final String ONESIGNAL_APP_ID = \"" + self.os_app_id + "\";\n")
-      check_insert_block(dir + '/' + app_class_location,
+      check_insert_block(project_dir + '/' + app_class_location,
                 /super.onCreate\(\);\s/,
                 "OneSignal.setAppId",
         "// Enable verbose OneSignal logging to debug issues if needed.
@@ -216,14 +219,14 @@ class OSProject::GoogleAndroid < OSProject
         OneSignal.initWithContext(this);
         OneSignal.setAppId(ONESIGNAL_APP_ID);\n")
     elsif lang == "kt"
-      success_mesage = check_insert_lines(dir + '/' + app_class_location,
+      success_mesage = check_insert_lines(project_dir + '/' + app_class_location,
                 "import [a-zA-Z.]+",
                 'import com.onesignal.OneSignal',
                 " * OneSignal init method configured inside Application's onCreate method\n")
-      check_insert_lines(dir + '/' + app_class_location,
+      check_insert_lines(project_dir + '/' + app_class_location,
                 "class [a-zA-Z\s:()]+{",
                 "\tprivate val oneSignalAppId = \"" + self.os_app_id + "\"\n")
-      check_insert_block(dir + '/' + app_class_location,
+      check_insert_block(project_dir + '/' + app_class_location,
                   /super.onCreate\(\)\s/,
                   "OneSignal.setAppId",
         "// Enable verbose OneSignal logging to debug issues if needed.
