@@ -30,6 +30,18 @@ class OSProject
   def has_sdk?
     raise Exception.new "Not Implemented"
   end
+
+  def self.version
+    '1.0'
+  end
+
+  def self.os
+    'mac'
+  end
+
+  def self.tool_name
+    'onesignal-cli'
+  end
 end
 
 class OSProject::Dummy < OSProject
