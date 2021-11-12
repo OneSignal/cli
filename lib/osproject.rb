@@ -42,6 +42,10 @@ class OSProject
   def self.tool_name
     'onesignal-cli'
   end
+  
+  def self.default_command
+    'install-sdk'
+  end
 end
 
 class OSProject::Dummy < OSProject
