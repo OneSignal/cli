@@ -73,12 +73,11 @@ end
 class OSCLI < Clamp::Command
     option ["--version", "-v"], :flag, "Show version" do
       puts OSProject.version
-      # TODO add tracking
+      NetworkHandler.instance.send_track_command("--version")
       exit(0)
     end
     option ["--help", "-h"], :flag, "Show Commands" do
       OSCLI.helptext
-      # TODO add tracking
       exit(0)
     end
     self.default_subcommand = "available-commands"
@@ -88,6 +87,7 @@ class OSCLI < Clamp::Command
 
     def self.helptext
       puts "usage: bin/onesignal [--version] [--help] [install-sdk --type <type> <path> <entrypoint> <lang> <appId>]"
+      NetworkHandler.instance.send_track_command("--help")
     end
 
     def self.availableCommandsText
@@ -97,5 +97,6 @@ class OSCLI < Clamp::Command
         \e[1mhelp:\e[0m  Lists the available commands in the OneSignal CLI
         See: <command-name> --help for details
       HELP
+      NetworkHandler.instance.send_track_command("available-commands")
     end
 end
