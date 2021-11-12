@@ -1,21 +1,20 @@
 require_relative 'osproject'
 require_relative 'osproject_helpers'
-require 'net/http'
-require 'uri'
-require 'resolv-replace'
+require_relative 'osnetwork'
 
 class OSProject::GoogleAndroid < OSProject
   attr_accessor :app_class_location
 
   def initialize(app_class_location, os_app_id)
     @app_class_location = app_class_location
-
+    
     directory_split = app_class_location.split('/', -1)
     lang_array = directory_split[-1].split(".")
+
     if lang_array.length() == 1
       puts 'Missing Application class file extension (.kt or .java)'
       error_track_message = "error=user missed Application class file extension;"
-      send_track_actions(os_app_id, 'android', "nil", error_track_message)
+      NetworkHandler.instance.send_track_actions(os_app_id, 'android', "nil", error_track_message)
       exit(1)
     end
 
@@ -25,7 +24,7 @@ class OSProject::GoogleAndroid < OSProject
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
       error_track_message = "error=user entered invalid language: " + lang + ";"
-      send_track_actions(os_app_id, 'android', lang, error_track_message)
+      NetworkHandler.instance.send_track_actions(os_app_id, 'android', lang, error_track_message)
       exit(1)
     end
 
@@ -37,6 +36,8 @@ class OSProject::GoogleAndroid < OSProject
     if app_class_location == nil
       raise 
     end
+
+    network_handler = NetworkHandler.instance
 
     project_dir = dir
     app_dir = app_class_location.split('/')[0]
@@ -50,7 +51,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "File not found: " + build_gradle_dir 
       puts "Call CLI tool from base project directory"
       error_track_message = "error=user called CLI from invalid directory file: " + build_gradle_dir + " not found;"
-      send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
+      network_handler.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
       return
     end
 
@@ -61,7 +62,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "Provide --entrypoint param as Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
       error_track_message = "error=user entered invalid Application file path: " + project_dir + '/' + app_dir + " directory not found;"
-      send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
+      network_handler.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
       return
     end
 
@@ -86,7 +87,7 @@ class OSProject::GoogleAndroid < OSProject
       unless user_response == "y" || user_response == "yes" || user_response == "n" || user_response == "no"
         puts 'Invalid response (Y/N)'
         error_track_message = "error=user entered invalid response for Application class creation command used: " + user_response + ";"
-        send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
+        NetworkHandler.instance.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
         exit(1)
       end
 
@@ -168,10 +169,10 @@ class OSProject::GoogleAndroid < OSProject
     actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
     success_mesage = "*** OneSignal integration completed successfully! ***\n\n" + success_mesage
     if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
-      send_track_actions(os_app_id, 'android', lang, "no actions, sdk already integrated;")
+      network_handler.send_track_actions(os_app_id, 'android', lang, "no actions, sdk already integrated;")
       puts "*** OneSignal already integrated, no changes needed ***\n\n"
     else
-      send_track_actions(os_app_id, 'android', lang, actions_taken)
+      network_handler.send_track_actions(os_app_id, 'android', lang, actions_taken)
       puts success_mesage
     end
   end
@@ -263,26 +264,6 @@ class OSProject::GoogleAndroid < OSProject
       raise "Don't know to handle #{lang}"
     end
     return success_mesage
-  end
-
-  def send_track_from_message(app_id, platform, lang, success_mesage, append_message)
-    actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
-    actions_taken += append_message
-    send_track_actions(os_app_id, 'android', lang, actions_taken)
-  end
-
-  def send_track_actions(app_id, platform, lang, actions_taken)
-    uri = URI.parse('https://api.onesignal.com/api/v1/track')
-
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-
-    request = Net::HTTP::Post.new(uri.request_uri)
-    request.set_form_data({})
-    request['app_id'] = app_id
-    request['OS-Usage-Data'] = 'lib-name=' + OSProject.tool_name + ',lib-version=' + OSProject.version + ',lib-os=' + OSProject.os + ',lib-type=' + platform + ',lib-lang=' + lang + ',lib-actions=' + actions_taken
-
-    response = http.request(request)
   end
 
   def has_sdk?

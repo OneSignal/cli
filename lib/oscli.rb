@@ -2,6 +2,9 @@ require 'clamp'
 require_relative 'osproject'
 require_relative 'osproject_ios'
 require_relative 'osproject_android'
+require 'net/http'
+require 'uri'
+require 'resolv-replace'
 
 class InstallCommand < Clamp::Command
     option [ "-t", "--type"], "TYPE", "project type (ios, android)"
@@ -69,11 +72,13 @@ end
 
 class OSCLI < Clamp::Command
     option ["--version", "-v"], :flag, "Show version" do
-      puts "0.0.0"
+      puts OSProject.version
+      # TODO add tracking
       exit(0)
     end
     option ["--help", "-h"], :flag, "Show Commands" do
       OSCLI.helptext
+      # TODO add tracking
       exit(0)
     end
     self.default_subcommand = "available-commands"
