@@ -11,10 +11,10 @@ class OSProject::GoogleAndroid < OSProject
     directory_split = app_class_location.split('/', -1)
     lang_array = directory_split[-1].split(".")
 
-    if lang_array.length() == 1
+    if lang_array.length == 1
       puts 'Missing Application class file extension (.kt or .java)'
-      error_track_message = "error=user missed Application class file extension;"
-      NetworkHandler.instance.send_track_actions(os_app_id, 'android', "nil", error_track_message)
+      error_track_message = "User missed Application class file extension;"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: nil, error_message: error_track_message)
       exit(1)
     end
 
@@ -23,8 +23,8 @@ class OSProject::GoogleAndroid < OSProject
 
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
-      error_track_message = "error=user entered invalid language: " + lang + ";"
-      NetworkHandler.instance.send_track_actions(os_app_id, 'android', lang, error_track_message)
+      error_track_message = "User entered invalid language: " + lang + ";"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
       exit(1)
     end
 
@@ -37,34 +37,12 @@ class OSProject::GoogleAndroid < OSProject
       raise 
     end
 
-    network_handler = NetworkHandler.instance
-
     project_dir = dir
     app_dir = app_class_location.split('/')[0]
     build_gradle_dir = project_dir + '/build.gradle'
     build_gradle_app_dir = project_dir + '/' + app_dir + '/build.gradle'
-    success_mesage = ""
 
-    begin 
-      content = File.read(build_gradle_dir)
-    rescue
-      puts "File not found: " + build_gradle_dir 
-      puts "Call CLI tool from base project directory"
-      error_track_message = "error=user called CLI from invalid directory file: " + build_gradle_dir + " not found;"
-      network_handler.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
-      return
-    end
-
-    begin 
-      content = File.read(build_gradle_app_dir)
-    rescue
-      puts "Directory not found: " + project_dir + '/' + app_dir 
-      puts "Provide --entrypoint param as Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
-      puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
-      error_track_message = "error=user entered invalid Application file path: " + project_dir + '/' + app_dir + " directory not found;"
-      network_handler.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
-      return
-    end
+    check_build_gradle_path(project_dir, app_dir, build_gradle_dir, build_gradle_app_dir)
 
     application_class_created = false
     application_class_exists = true
@@ -86,8 +64,9 @@ class OSProject::GoogleAndroid < OSProject
 
       unless user_response == "y" || user_response == "yes" || user_response == "n" || user_response == "no"
         puts 'Invalid response (Y/N)'
-        error_track_message = "error=user entered invalid response for Application class creation command used: " + user_response + ";"
-        NetworkHandler.instance.send_track_from_message(os_app_id, 'android', lang, success_mesage, error_track_message)
+
+        error_track_message = "User entered invalid response for Application class creation. Command used: #{user_response};"
+        NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
         exit(1)
       end
 
@@ -99,13 +78,62 @@ class OSProject::GoogleAndroid < OSProject
       end
     end 
 
-    gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
-    os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"
-    app_os_gradle_plugin_mesage = " * Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin' to app build.gradle\n"
-    app_os_dependency_message = " * Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' to app build.gradle \n"
+    success_mesage = add_deps_build_gradle(build_gradle_dir)
+    success_mesage += add_deps_app_build_gradle(build_gradle_app_dir)
 
-    # TODO: this gradle tack is a very brittle approach.
-    # add deps to /build.gradle
+    if application_class_exists
+      success_mesage += add_application_init_code(project_dir, app_class_location, lang)
+    end
+
+    show_finish_message(project_dir, application_class_created, app_class_location, application_name, success_mesage)
+  end
+
+  def check_insert_lines(directory, regex, addition, success_mesage = "")
+    if !File.readlines(directory).any?{ |l| l[addition] }
+      result = _insert_lines(directory, regex, addition)
+      if (result.nil?)
+        return ""
+      end
+      return success_mesage
+    end
+    return ""
+  end
+
+  def check_insert_block(directory, regex, addition, addition_block, success_mesage = "")
+    if !File.readlines(directory).any?{ |l| l[addition] }
+      _insert_lines(directory, regex, addition_block)
+      return success_mesage
+    end
+    return ""
+  end
+  
+  def show_finish_message(project_dir, application_class_created, app_class_location, application_name, success_mesage)
+    actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
+
+    if application_class_created
+      success_mesage += " * Created " + application_name + " Application class at " + project_dir + '/' + app_class_location + "\n"
+      success_mesage += " * Added Application class to AndroidManifest file\n"
+
+      actions_taken +=  "Created " + application_name + " Application;Added Application class to AndroidManifest file;"
+    end
+
+    success_mesage = "*** OneSignal integration completed successfully! ***\n\n" + success_mesage
+
+    if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
+      NetworkHandler.instance.send_track_actions(app_id: os_app_id, platform: 'android', lang: lang, actions_taken: "no actions, sdk already integrated;")
+      puts "*** OneSignal already integrated, no changes needed ***\n\n"
+    else
+      NetworkHandler.instance.send_track_actions(app_id: os_app_id, platform: 'android', lang: lang, actions_taken: actions_taken)
+      puts success_mesage
+    end
+  end
+
+  # add deps to /build.gradle
+  def add_deps_build_gradle(build_gradle_dir)
+    gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
+    os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"    
+
+    success_mesage = ""
     success_mesage += check_insert_lines(build_gradle_dir,
                   Regexp.quote("mavenCentral()"),
                   "gradlePluginPortal()",
@@ -126,74 +154,71 @@ class OSProject::GoogleAndroid < OSProject
                   "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"",
                   os_gradle_plugin_mesage)
 
-    # add deps to /app/build.gradle
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "implementation \"androidx.appcompat:appcompat:[^']*\"",
-                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
-                  app_os_dependency_message)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "implementation 'androidx.appcompat:appcompat:[^']*'",
-                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
-                  app_os_dependency_message)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "implementation \"com.google.android.material:material:[^']*\"",
-                  "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
-                  app_os_dependency_message)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "implementation 'com.google.android.material:material:[^']*'",
-                  "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
-                  app_os_dependency_message)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "apply plugin: 'com.android.application'",
-                  "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
-                  app_os_gradle_plugin_mesage)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-                  "id 'com.android.application'",
-                  "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
-                  app_os_gradle_plugin_mesage)
-
-    if application_class_exists
-      success_mesage += add_application_init_code(project_dir, app_class_location, lang)
-    end
-
-    if application_class_created
-      success_mesage += " * Created " + application_name + " Application class at " + project_dir + '/' + app_class_location + "\n"
-      success_mesage += " * Added Application class to AndroidManifest file\n"
-    end
-
-    actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
-    success_mesage = "*** OneSignal integration completed successfully! ***\n\n" + success_mesage
-    if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
-      network_handler.send_track_actions(os_app_id, 'android', lang, "no actions, sdk already integrated;")
-      puts "*** OneSignal already integrated, no changes needed ***\n\n"
-    else
-      network_handler.send_track_actions(os_app_id, 'android', lang, actions_taken)
-      puts success_mesage
-    end
+    success_mesage
   end
 
-  def check_insert_lines(directory, regex, addition, success_mesage = "")
-    if !File.readlines(directory).any?{ |l| l[addition] }
-      result = _insert_lines(directory, regex, addition)
-      if (result.nil?)
-        return ""
-      end
-      return success_mesage
-    end
-    return ""
+  # add deps to /app/build.gradle
+  def add_deps_app_build_gradle(build_gradle_app_dir)
+    app_os_dependency_message = " * Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' to app build.gradle \n"
+    app_os_gradle_plugin_mesage = " * Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin' to app build.gradle\n"
+
+    success_mesage = ""
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "implementation \"androidx.appcompat:appcompat:[^']*\"",
+      "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
+      app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "implementation 'androidx.appcompat:appcompat:[^']*'",
+      "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
+      app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "implementation \"com.google.android.material:material:[^']*\"",
+      "implementation \"com.onesignal:OneSignal:[4.0.0, 4.99.99]\"",
+      app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "implementation 'com.google.android.material:material:[^']*'",
+      "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
+      app_os_dependency_message)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "apply plugin: 'com.android.application'",
+      "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
+      app_os_gradle_plugin_mesage)
+
+    success_mesage += check_insert_lines(build_gradle_app_dir,
+      "id 'com.android.application'",
+      "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
+      app_os_gradle_plugin_mesage)
+
+    success_mesage
   end
 
-  def check_insert_block(directory, regex, addition, addition_block, success_mesage = "")
-    if !File.readlines(directory).any?{ |l| l[addition] }
-      _insert_lines(directory, regex, addition_block)
-      return success_mesage
+  def check_build_gradle_path(project_dir, app_dir, build_gradle_dir, build_gradle_app_dir)
+    begin 
+      content = File.read(build_gradle_dir)
+    rescue
+      puts "File not found: " + build_gradle_dir 
+      puts "Call CLI tool from base project directory"
+      
+      error_track_message = "User called CLI from invalid directory file. " + build_gradle_dir + " not found;"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
+      exit(1)
     end
-    return ""
+
+    begin 
+      content = File.read(build_gradle_app_dir)
+    rescue
+      puts "Directory not found: " + project_dir + '/' + app_dir 
+      puts "Provide --entrypoint param as Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
+      puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
+
+      error_track_message = "User entered invalid Application file path. " + project_dir + '/' + app_dir + " directory not found;"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
+      exit(1)
+    end
   end
 
   def create_application_file(project_dir, app_dir, package_directory, app_class_location, application_name, lang)

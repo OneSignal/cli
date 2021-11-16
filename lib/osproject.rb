@@ -8,6 +8,9 @@ class OSProject
   attr_accessor :fcm_id
   attr_accessor :apns_id
 
+  VERSION = '0.0.1'
+  TOOL_NAME = 'onesignal-cli'
+
   def initialize(type, dir, lang, os_app_id)
     @type = type
     @dir = dir
@@ -31,16 +34,8 @@ class OSProject
     raise Exception.new "Not Implemented"
   end
 
-  def self.version
-    '0.0.0'
-  end
-
   def self.os
     'mac'
-  end
-
-  def self.tool_name
-    'onesignal-cli'
   end
   
   def self.default_command
