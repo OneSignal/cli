@@ -4,55 +4,84 @@ require_relative 'osproject_ios'
 require_relative 'osproject_android'
 
 class NetworkHandler
-    @instance = new
+  @instance = new
 
-    private_class_method :new
+  private_class_method :new
 
-    def self.instance
-      @instance
-    end
+  URL = 'https://api.onesignal.com/api/v1/track'
 
-    def track_uri
-      URI.parse('https://api.onesignal.com/api/v1/track')
-    end
+  def self.instance
+    @instance
+  end
 
-    def getHttp_net(uri)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      return http
-    end
+  def get_http_net()
+    uri = URI.parse(URL)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    return http
+  end
 
-    def send_track_from_message(app_id, platform, lang, success_mesage, append_message)
+  def send_track_from_error(app_id, platform, lang, success_mesage, error_message)
+    error_message = "error=#{error_message}"
+    actions_taken = ""
+
+    if success_mesage.nil? || success_mesage.empty?
+      actions_taken = error_message
+    else
       actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
-      actions_taken += append_message
-      send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
+      actions_taken += error_message
     end
-
-    def send_track_actions(app_id, platform, lang, actions_taken)
-      send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
-    end
-
-    def send_track_command_actions(app_id, platform, lang, command, actions_taken)
-      uri = track_uri
-      http = getHttp_net()
-
-      request = Net::HTTP::Post.new(uri.request_uri)
   
-      request['app_id'] = app_id
-      request['OS-Usage-Data'] = 'lib-name=' + OSProject.tool_name + ',lib-version=' + OSProject.version + ',lib-os=' + OSProject.os + ',lib-type=' + platform + ',lib-lang=' + lang + ',lib-command=' + command + ',lib-actions=' + actions_taken
+    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
+  end
 
-      response = http.request(request)
+  def send_track_actions(app_id, platform, lang, actions_taken)
+    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
+  end
+
+  def send_track_command_actions(app_id, platform, lang, command, actions_taken)
+    http = get_http_net()
+
+    request = Net::HTTP::Post.new(URL)
+
+    request['app_id'] = app_id
+    request['OS-Usage-Data'] = get_usage_data(platform, lang, command, actions_taken)
+    puts request['OS-Usage-Data']
+    response = http.request(request)
+    puts response
+  end
+
+  def send_track_command(command)
+    http = get_http_net()
+
+    request = Net::HTTP::Post.new(URL)
+
+    request['app_id'] = ""
+    request['OS-Usage-Data'] = get_usage_data(nil, nil, command, nil)
+    puts request['OS-Usage-Data']
+    response = http.request(request)
+    puts response
+  end
+
+  def get_usage_data(platform, lang, command, actions_taken)
+    data = "lib-name=#{OSProject::TOOL_NAME},lib_version=#{OSProject::VERSION},lib-os=#{OSProject.os}"
+
+    if !(platform.nil? || platform.empty?)
+      data += ",lib-type=#{platform}"
     end
 
-    def send_track_command(command)
-      uri = track_uri
-      http = getHttp_net(uri)
-  
-      request = Net::HTTP::Post.new(uri.request_uri)
-
-      request['app_id'] = ""
-      request['OS-Usage-Data'] = 'lib-name=' + OSProject.tool_name + ',lib-version=' + OSProject.version + ',lib-os=' + OSProject.os + ',lib-command=' + command
-
-      response = http.request(request)
+    if !(lang.nil? || lang.empty?)
+      data += ",lib-lang=#{lang}"
     end
+
+    if !(command.nil? || command.empty?)
+      data += ",lib-command=#{command}"
+    end
+
+    if !(lang.nil? || lang.empty?)
+      data += ",lib-actions=#{actions_taken}"
+    end
+
+    return data
+  end
 end
