@@ -49,9 +49,8 @@ class NetworkHandler
 
     request['app_id'] = ""
     request['OS-Usage-Data'] = get_usage_data(nil, nil, command, nil)
-    puts request['OS-Usage-Data']
+    
     response = http.request(request)
-    puts response
   end
 
   private
@@ -63,9 +62,8 @@ class NetworkHandler
 
     request['app_id'] = app_id
     request['OS-Usage-Data'] = get_usage_data(platform, lang, command, actions_taken)
-    puts request['OS-Usage-Data']
+
     response = http.request(request)
-    puts response
   end
 
   def get_usage_data(platform, lang, command, actions_taken)
