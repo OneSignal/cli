@@ -14,7 +14,7 @@ class OSProject::GoogleAndroid < OSProject
     if lang_array.length == 1
       puts 'Missing Application class file extension (.kt or .java)'
       error_track_message = "error=user missed Application class file extension;"
-      NetworkHandler.instance.send_track_from_error(os_app_id, 'android', nil, nil, error_track_message)
+      NetworkHandler.instance.send_track_error(os_app_id, 'android', nil, error_track_message)
       exit(1)
     end
 
@@ -24,7 +24,7 @@ class OSProject::GoogleAndroid < OSProject
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
       error_track_message = "error=user entered invalid language: " + lang + ";"
-      NetworkHandler.instance.send_track_from_error(os_app_id, 'android', lang, nil, error_track_message)
+      NetworkHandler.instance.send_track_error(os_app_id, 'android', lang, error_track_message)
       exit(1)
     end
 
@@ -43,7 +43,6 @@ class OSProject::GoogleAndroid < OSProject
     app_dir = app_class_location.split('/')[0]
     build_gradle_dir = project_dir + '/build.gradle'
     build_gradle_app_dir = project_dir + '/' + app_dir + '/build.gradle'
-    success_mesage = ""
 
     begin 
       content = File.read(build_gradle_dir)
@@ -51,7 +50,8 @@ class OSProject::GoogleAndroid < OSProject
       puts "File not found: " + build_gradle_dir 
       puts "Call CLI tool from base project directory"
       
-      network_handler.send_track_from_error(os_app_id, 'android', lang, success_mesage, "user called CLI from invalid directory file: " + build_gradle_dir + " not found;")
+      error_track_message = "user called CLI from invalid directory file: " + build_gradle_dir + " not found;"
+      network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
       return
     end
 
@@ -62,7 +62,8 @@ class OSProject::GoogleAndroid < OSProject
       puts "Provide --entrypoint param as Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
 
-      network_handler.send_track_from_error(os_app_id, 'android', lang, success_mesage, "user entered invalid Application file path: " + project_dir + '/' + app_dir + " directory not found;")
+      error_track_message = "user entered invalid Application file path: " + project_dir + '/' + app_dir + " directory not found;"
+      network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
       return
     end
 
@@ -87,7 +88,8 @@ class OSProject::GoogleAndroid < OSProject
       unless user_response == "y" || user_response == "yes" || user_response == "n" || user_response == "no"
         puts 'Invalid response (Y/N)'
 
-        NetworkHandler.instance.send_track_from_error(os_app_id, 'android', lang, success_mesage, "user entered invalid response for Application class creation command used: #{user_response};")
+        error_track_message = "user entered invalid response for Application class creation command used: #{user_response};"
+        NetworkHandler.instance.send_track_error(os_app_id, 'android', lang, error_track_message)
         exit(1)
       end
 
@@ -99,6 +101,7 @@ class OSProject::GoogleAndroid < OSProject
       end
     end 
 
+    success_mesage = ""
     gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
     os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"
     app_os_gradle_plugin_mesage = " * Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin' to app build.gradle\n"
