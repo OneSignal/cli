@@ -49,7 +49,7 @@ class NetworkHandler
 
     request['app_id'] = ""
     request['OS-Usage-Data'] = get_usage_data(nil, nil, command, nil)
-    
+
     response = http.request(request)
   end
 
@@ -69,21 +69,10 @@ class NetworkHandler
   def get_usage_data(platform, lang, command, actions_taken)
     data = "lib-name=#{OSProject::TOOL_NAME},lib_version=#{OSProject::VERSION},lib-os=#{OSProject.os}"
 
-    if platform
-      data += ",lib-type=#{platform}"
-    end
-
-    if lang
-      data += ",lib-lang=#{lang}"
-    end
-
-    if command
-      data += ",lib-command=#{command}"
-    end
-
-    if lang
-      data += ",lib-actions=#{actions_taken}"
-    end
+    data += ",lib-type=#{platform}" if platform
+    data += ",lib-lang=#{lang}" if lang
+    data += ",lib-command=#{command}" if command
+    data += ",lib-actions=#{actions_taken}" if actions_taken
 
     return data
   end
