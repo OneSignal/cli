@@ -12,10 +12,21 @@ class InstallCommand < Clamp::Command
     option ["--path"], "PATH", "path to the project directory"
     option ["--entrypoint"], "ENTRYPOINT", "Name of the target XCProject (ios) or appclassfile (android)"
     option ["--lang"], "LANG", "programming language to use for ios (objc, swift) or android (java, kotlin)", default: ""
-    option ["--appid"], "[APPID]", "OneSignal App ID", default: ""
+    option ["--appid"], "[APPID]", "OneSignal App ID"
 
     def execute  
-      if type == 'ios'
+      if appid.nil? || appid.empty?
+        puts 'Please provide a project appId with the --appid option'
+        exit(1)
+      end
+      
+      if !type
+        puts 'Please provide a project type (ios or android) with the --type option'
+        exit(1)
+      end
+
+      type_downcase = type.downcase
+      if type_downcase == 'ios'
         langmap = {
           'objc' => :objc,
           'swift' => :swift
@@ -32,10 +43,8 @@ class InstallCommand < Clamp::Command
         ios_proj = OSProject::IOS.new(path, target, language, appid)
         xcodeproj_path = path + '/' + entrypoint + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path)
-      elsif type == 'android'
+      elsif type_downcase == 'android'
         OSProject::GoogleAndroid.new(entrypoint, appid).add_sdk!()
-      elsif !type
-        puts 'Please provide a project type (ios or android) with the --type option'
       else
         puts 'Invalid type (ios or android)'
       end
