@@ -1,5 +1,6 @@
 require_relative 'osproject'
 require_relative 'osproject_helpers'
+require_relative 'osnetwork'
 require 'xcodeproj'
 
 class OSProject::IOS < OSProject
@@ -38,14 +39,15 @@ end"
   def _add_sdk
     # Order matters here
     #Main target setup
-    _add_capabilities_to_main_target()
-    _add_os_init_to_app_target()
+    actions_taken = _add_capabilities_to_main_target()
+    actions_taken += _add_os_init_to_app_target()
     #NSE setup
-    _create_nse()
-    _add_nse_to_app_target()
-    _add_app_groups_to_nse()
+    actions_taken += _create_nse()
+    actions_taken += _add_nse_to_app_target()
+    actions_taken += _add_app_groups_to_nse()
     #Add OneSignal
-    _add_onesignal_dependency()
+    actions_taken += _add_onesignal_dependency()
+    NetworkHandler.instance.send_track_actions(app_id: os_app_id, platform: type, lang: lang, actions_taken: actions_taken)
   end
 
   def has_sdk?
@@ -62,12 +64,16 @@ end"
       @project = Xcodeproj::Project.open(xcproj_path)
     else
       puts "Unable to open an xcodeproj at path: " + xcproj_path
+      error_track_message = "User provided a wrong xcodeproj path: #{xcproj_path};"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
       exit(1)
     end
     
     @target = self.project.native_targets.find { |target| target.name == self.target_name}
     if !self.target
       puts "Unable to find an app target with name: " + self.target_name
+      error_track_message = "User provided a wrong target name;"
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
       exit(1)
     end
     
@@ -84,10 +90,11 @@ end"
   # Only use Cocoapods if a Podfile already exists. If not use SwiftPM
   def _add_onesignal_dependency()
     if File.exist?(self.dir + '/Podfile')
-      _add_onesignal_podspec_dependency()
+      return _add_onesignal_podspec_dependency()
     else 
-      _add_onesignal_sp_dependency()
-      _add_onesignal_framework_to_main_target()
+      actions_taken = _add_onesignal_sp_dependency()
+      actions_taken += _add_onesignal_framework_to_main_target()
+      return actions_taken
     end
   end
 
@@ -111,16 +118,23 @@ end"
     install_script = 'pod install --project-directory=' + self.dir
     success = system(install_script)
     if success
-      puts "Installed OneSignal pod"
+      message = "Installed OneSignal pod"
+      puts message
     else  
-      puts "Error adding OneSignal to Podfile"
+      internal_message = "Error adding OneSignal to Podfile"
+      message = "error=#{internal_message}"
+      puts internal_message
     end
+
+    return "#{message};"
   end
 
   def _create_nse()
     # Create NSE target
     self.project.embedded_targets_in_native_target(self.target).each do |embedded_target|
-      return if embedded_target.name == 'OneSignalNotificationServiceExtension'
+      if embedded_target.name == 'OneSignalNotificationServiceExtension'
+        return ""
+      end
     end
     @nse = self.project.new_target(:app_extension, 'OneSignalNotificationServiceExtension', :ios, self.target.deployment_target, nil, lang)
     self.nse.build_configuration_list.set_setting('PRODUCT_NAME', 'OneSignalNotificationServiceExtension')
@@ -166,12 +180,16 @@ end"
       self.nse_group.new_reference("OneSignalNotificationServiceExtension/Info.plist")
       self.nse.build_configuration_list.set_setting('INFOPLIST_FILE', 'OneSignalNotificationServiceExtension/Info.plist')
     end
-    puts "Created OneSignalNotificationServiceExtension"
+    message = "Created OneSignalNotificationServiceExtension"
+    puts message
     self.project.save()
+    return "#{message};"
   end
 
   def _add_nse_to_app_target()
-    return if !self.nse
+    if !self.nse
+      return ""
+    end
     unless self.target.dependency_for_target(self.nse)
       self.target.add_dependency(self.nse)
       nse_product = self.nse.product_reference
@@ -182,12 +200,20 @@ end"
         embed_extensions_plugins_phase = self.target.new_copy_files_build_phase('Embed App Extensions')
         embed_extensions_plugins_phase.symbol_dst_subfolder_spec = :plug_ins
       end
-      abort "Couldn't find 'Embed App Extensions Plugin' phase" if embed_extensions_plugins_phase.nil?
-      
+
+      if embed_extensions_plugins_phase.nil?
+        error_track_message = "Couldn't find 'Embed App Extensions Plugin' phase"
+        NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
+        abort error_track_message
+      end
+    
       build_file = embed_extensions_plugins_phase.add_file_reference(nse_product)
       build_file.settings = { "ATTRIBUTES" => ['RemoveHeadersOnCopy'] }
       self.project.save()
-      puts "Added NSE to App target"
+
+      message = "Added NSE to App target"
+      puts message
+      return "#{message};"
     end
   end
 
@@ -210,8 +236,10 @@ end"
     
     @onesignal_product_ref = Xcodeproj::Project::Object::XCSwiftPackageProductDependency.new(project, project.generate_uuid)
     self.onesignal_product_ref.product_name = 'OneSignal'
-    puts "Added OneSignal Swift Package"
+    message = "Added OneSignal Swift Package"
+    puts message
     self.project.save()
+    return "#{message};"
   end
 
   # add swift package binary to nse target
@@ -225,14 +253,19 @@ end"
                  .each(&:remove_from_project)
 
     self.nse.package_product_dependencies << self.onesignal_product_ref
-    puts "Added OneSignal Dependency to NSE"
+    message = "Added OneSignal Dependency to NSE"
+    puts message
     self.project.save()
+    return "#{message};"
   end 
 
   # app groups capability
   # Creates OneSignalNotificationServiceExtension.entitlements if it doesn't exist
   def _add_app_groups_to_nse()
-    return if !self.nse
+    if !self.nse
+      return ""
+    end
+
     group_relative_entitlements_path = self.nse.name + "/" + self.nse.name + ".entitlements"
     entitlements_path = dir + "/" + group_relative_entitlements_path
     entitlements = {}
@@ -254,8 +287,10 @@ end"
       self.nse_group.new_reference(group_relative_entitlements_path)
       self.nse.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
     end
-    puts "Added OneSignal App Group to NSE"
+    message = "Added OneSignal App Group to NSE"
+    puts message
     self.project.save()
+    return "#{message};"
   end
 
   # add swift package binary to main target
@@ -265,24 +300,32 @@ end"
                   .each(&:remove_from_project)
 
     self.target.package_product_dependencies << self.onesignal_product_ref
-    puts "Added OneSignal dependency to App target"
+    message = "Added OneSignal dependency to App target"
+    puts message
     self.project.save()
+    return "#{message};"
   end 
 
   # push capability in entitlments
   # background capability with remote notifications enabled
   # App group entitlement based on target bundle id
   def _add_capabilities_to_main_target()
-    
+    message = ""
     #Update Info.plist of Target to include background modes with remote notifications
     plist_path = dir + "/" + self.target.build_configuration_list.get_setting('INFOPLIST_FILE')['Debug']
     info_plist = Xcodeproj::Plist.read_from_path(plist_path)
     if info_plist["UIBackgroundModes"].nil?
       info_plist["UIBackgroundModes"] = ["remote-notification"]
-      puts "Added remote notification background mode"
+      message = "Added remote notification background mode"
+      puts message
     elsif !info_plist["UIBackgroundModes"].include? 'remote-notification'
       info_plist["UIBackgroundModes"].push('remote-notification')
-      puts "Added remote notification background mode"
+      message = "Added remote notification background mode"
+      puts message 
+    end
+
+    unless message.empty?
+      message = "#{message};"
     end
 
     Xcodeproj::Plist.write_to_path(info_plist, plist_path)
@@ -297,7 +340,9 @@ end"
       if entitlements['aps-environment'].nil?
         entitlements['aps-environment'] = 'development'
         Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
-        puts "Added push notification capability"
+        internal_message = "Added push notification capability"
+        message += "#{internal_message};"
+        puts internal_message 
       end
     else
       entitlements = {
@@ -306,7 +351,9 @@ end"
       Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
       group.new_reference(self.target_name + ".entitlements")
       self.target.build_configuration_list.set_setting('CODE_SIGN_ENTITLEMENTS', group_relative_entitlements_path)
-      puts "Added push notification capability"
+      internal_message = "Added push notification capability"
+      message += "#{internal_message};"
+      puts internal_message 
     end
 
     # Add App Group to entitlements
@@ -314,17 +361,24 @@ end"
     app_group_name = 'group.' + bundle_id + '.onesignal'
     if entitlements['com.apple.security.application-groups'].nil?
       entitlements['com.apple.security.application-groups'] = [app_group_name]
-      puts "Added OneSignal App Group"
+      internal_message = "Added OneSignal App Group"
+      message += "#{internal_message};"
+      puts internal_message 
     elsif !entitlements['com.apple.security.application-groups'].include? app_group_name
       entitlements['com.apple.security.application-groups'].push(app_group_name)
-      puts "Added OneSignal App Group"
+      internal_message = "Added OneSignal App Group"
+      message += "#{internal_message};"
+      puts internal_message 
     end
     Xcodeproj::Plist.write_to_path(entitlements, entitlements_path)
     self.project.save()
+
+    return message
   end
 
   # depends on language and app lifecycle (appdelegate vs swiftui)
   def _add_os_init_to_app_target()
+    return ""
   end
 end
 
