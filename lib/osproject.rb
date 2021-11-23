@@ -8,7 +8,7 @@ class OSProject
   attr_accessor :fcm_id
   attr_accessor :apns_id
 
-  VERSION = '0.0.0'
+  VERSION = '0.0.1'
   TOOL_NAME = 'onesignal-cli'
 
   def initialize(type, dir, lang, os_app_id)

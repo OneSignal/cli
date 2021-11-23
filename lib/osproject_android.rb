@@ -50,7 +50,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "File not found: " + build_gradle_dir 
       puts "Call CLI tool from base project directory"
       
-      error_track_message = "User called CLI from invalid directory file: " + build_gradle_dir + " not found;"
+      error_track_message = "User called CLI from invalid directory file. " + build_gradle_dir + " not found;"
       network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
       return
     end
@@ -62,7 +62,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "Provide --entrypoint param as Application file path directory. If no Appplication class available, OneSignal will create it at the directory provided."
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
 
-      error_track_message = "User entered invalid Application file path: " + project_dir + '/' + app_dir + " directory not found;"
+      error_track_message = "User entered invalid Application file path. " + project_dir + '/' + app_dir + " directory not found;"
       network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
       return
     end
@@ -88,7 +88,7 @@ class OSProject::GoogleAndroid < OSProject
       unless user_response == "y" || user_response == "yes" || user_response == "n" || user_response == "no"
         puts 'Invalid response (Y/N)'
 
-        error_track_message = "User entered invalid response for Application class creation command used: #{user_response};"
+        error_track_message = "User entered invalid response for Application class creation. Command used: #{user_response};"
         NetworkHandler.instance.send_track_error(os_app_id, 'android', lang, error_track_message)
         exit(1)
       end
@@ -164,13 +164,17 @@ class OSProject::GoogleAndroid < OSProject
       success_mesage += add_application_init_code(project_dir, app_class_location, lang)
     end
 
+    actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
+
     if application_class_created
       success_mesage += " * Created " + application_name + " Application class at " + project_dir + '/' + app_class_location + "\n"
       success_mesage += " * Added Application class to AndroidManifest file\n"
+
+      actions_taken +=  "Created " + application_name + " Application;Added Application class to AndroidManifest file;"
     end
 
-    actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
     success_mesage = "*** OneSignal integration completed successfully! ***\n\n" + success_mesage
+
     if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
       network_handler.send_track_actions(os_app_id, 'android', lang, "no actions, sdk already integrated;")
       puts "*** OneSignal already integrated, no changes needed ***\n\n"

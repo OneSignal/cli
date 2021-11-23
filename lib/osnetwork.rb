@@ -22,26 +22,15 @@ class NetworkHandler
   end
 
   def send_track_error(app_id, platform, lang, error_message)
-    send_track_from_error(app_id, platform, lang, nil, error_message)
-  end
-
-  def send_track_from_error(app_id, platform, lang, success_mesage, error_message)
-    error_message = "error=#{error_message}"
-
-    if success_mesage.nil? || success_mesage.empty?
-      actions_taken = error_message
-    else
-      actions_taken = success_mesage.gsub(" * ", "").gsub("\n",";")
-      actions_taken += error_message
-    end
-  
-    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
+    send_track_command_actions(app_id, platform, lang, OSProject.default_command, nil, error_message)
   end
 
   def send_track_actions(app_id, platform, lang, actions_taken)
-    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken)
+    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken, nil)
   end
 
+  # Send command used by the user for tracking
+  # There are cases where --help, --version commands might be used, and there is no other data in addition to the command name
   def send_track_command(command)
     http = get_http_net()
 
@@ -55,24 +44,25 @@ class NetworkHandler
 
   private
 
-  def send_track_command_actions(app_id, platform, lang, command, actions_taken)
+  def send_track_command_actions(app_id, platform, lang, command, actions_taken, error_message)
     http = get_http_net()
 
     request = Net::HTTP::Post.new(URL)
 
     request['app_id'] = app_id
-    request['OS-Usage-Data'] = get_usage_data(platform, lang, command, actions_taken)
+    request['OS-Usage-Data'] = get_usage_data(platform, lang, command, actions_taken, error_message)
 
     response = http.request(request)
   end
 
-  def get_usage_data(platform, lang, command, actions_taken)
-    data = "lib-name=#{OSProject::TOOL_NAME},lib_version=#{OSProject::VERSION},lib-os=#{OSProject.os}"
+  def get_usage_data(platform, lang, command, actions_taken, error_message)
+    data = "kind=sdk, name=#{OSProject::TOOL_NAME}, version=#{OSProject::VERSION}, target-os=#{OSProject.os}"
 
-    data += ",lib-type=#{platform}" if platform
-    data += ",lib-lang=#{lang}" if lang
-    data += ",lib-command=#{command}" if command
-    data += ",lib-actions=#{actions_taken}" if actions_taken
+    data += ", type=#{platform}" if platform
+    data += ", lang=#{lang}" if lang
+    data += ", command=#{command}" if command
+    data += ", actions=#{actions_taken}" if actions_taken
+    data += ", error=#{error_message}" if error_message
 
     return data
   end
