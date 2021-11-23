@@ -18,15 +18,15 @@ class NetworkHandler
     uri = URI.parse(URL)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
-    return http
+    http
   end
 
-  def send_track_error(app_id, platform, lang, error_message)
-    send_track_command_actions(app_id, platform, lang, OSProject.default_command, nil, error_message)
+  def send_track_error(app_id:, platform:, lang:, error_message:)
+    send_track_command_actions(app_id: app_id, platform: platform, lang: lang, command: OSProject.default_command, error_message: error_message)
   end
 
-  def send_track_actions(app_id, platform, lang, actions_taken)
-    send_track_command_actions(app_id, platform, lang, OSProject.default_command, actions_taken, nil)
+  def send_track_actions(app_id:, platform:, lang:, actions_taken:)
+    send_track_command_actions(app_id: app_id, platform: platform, lang: lang, command: OSProject.default_command, actions_taken: actions_taken)
   end
 
   # Send command used by the user for tracking
@@ -44,18 +44,18 @@ class NetworkHandler
 
   private
 
-  def send_track_command_actions(app_id, platform, lang, command, actions_taken, error_message)
+  def send_track_command_actions(app_id:, platform:nil, lang:nil, command:nil, actions_taken:nil, error_message:nil)
     http = get_http_net()
 
     request = Net::HTTP::Post.new(URL)
 
     request['app_id'] = app_id
-    request['OS-Usage-Data'] = get_usage_data(platform, lang, command, actions_taken, error_message)
+    request['OS-Usage-Data'] = get_usage_data(platform: platform, lang: lang, command: command, actions_taken: actions_taken, error_message: error_message)
 
     response = http.request(request)
   end
 
-  def get_usage_data(platform, lang, command, actions_taken, error_message)
+  def get_usage_data(platform:nil, lang:nil, command:nil, actions_taken:nil, error_message:nil)
     data = "kind=sdk, name=#{OSProject::TOOL_NAME}, version=#{OSProject::VERSION}, target-os=#{OSProject.os}"
 
     data += ", type=#{platform}" if platform

@@ -14,7 +14,7 @@ class OSProject::GoogleAndroid < OSProject
     if lang_array.length == 1
       puts 'Missing Application class file extension (.kt or .java)'
       error_track_message = "User missed Application class file extension;"
-      NetworkHandler.instance.send_track_error(os_app_id, 'android', nil, error_track_message)
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: nil, error_message: error_track_message)
       exit(1)
     end
 
@@ -24,7 +24,7 @@ class OSProject::GoogleAndroid < OSProject
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
       error_track_message = "User entered invalid language: " + lang + ";"
-      NetworkHandler.instance.send_track_error(os_app_id, 'android', lang, error_track_message)
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
       exit(1)
     end
 
@@ -51,7 +51,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "Call CLI tool from base project directory"
       
       error_track_message = "User called CLI from invalid directory file. " + build_gradle_dir + " not found;"
-      network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
+      network_handler.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
       return
     end
 
@@ -63,7 +63,7 @@ class OSProject::GoogleAndroid < OSProject
       puts "Example: app/src/main/java/com/onesignal/testapplication/OneSignalApplication.java"
 
       error_track_message = "User entered invalid Application file path. " + project_dir + '/' + app_dir + " directory not found;"
-      network_handler.send_track_error(os_app_id, 'android', lang, error_track_message)
+      network_handler.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
       return
     end
 
@@ -89,7 +89,7 @@ class OSProject::GoogleAndroid < OSProject
         puts 'Invalid response (Y/N)'
 
         error_track_message = "User entered invalid response for Application class creation. Command used: #{user_response};"
-        NetworkHandler.instance.send_track_error(os_app_id, 'android', lang, error_track_message)
+        NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: 'android', lang: lang, error_message: error_track_message)
         exit(1)
       end
 
@@ -176,10 +176,10 @@ class OSProject::GoogleAndroid < OSProject
     success_mesage = "*** OneSignal integration completed successfully! ***\n\n" + success_mesage
 
     if success_mesage == "*** OneSignal integration completed successfully! ***\n\n"
-      network_handler.send_track_actions(os_app_id, 'android', lang, "no actions, sdk already integrated;")
+      network_handler.send_track_actions(app_id: os_app_id, platform: 'android', lang: lang, actions_taken: "no actions, sdk already integrated;")
       puts "*** OneSignal already integrated, no changes needed ***\n\n"
     else
-      network_handler.send_track_actions(os_app_id, 'android', lang, actions_taken)
+      network_handler.send_track_actions(app_id: os_app_id, platform: 'android', lang: lang, actions_taken: actions_taken)
       puts success_mesage
     end
   end
