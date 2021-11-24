@@ -47,7 +47,7 @@ end"
     actions_taken += _add_app_groups_to_nse()
     #Add OneSignal
     actions_taken += _add_onesignal_dependency()
-    NetworkHandler.instance.send_track_actions(os_app_id, type, lang, actions_taken)
+    NetworkHandler.instance.send_track_actions(app_id: os_app_id, platform: type, lang: lang, actions_taken: actions_taken)
   end
 
   def has_sdk?
@@ -65,7 +65,7 @@ end"
     else
       puts "Unable to open an xcodeproj at path: " + xcproj_path
       error_track_message = "User provided a wrong xcodeproj path: #{xcproj_path};"
-      NetworkHandler.instance.send_track_error(os_app_id, type, lang, error_track_message)
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
       exit(1)
     end
     
@@ -73,7 +73,7 @@ end"
     if !self.target
       puts "Unable to find an app target with name: " + self.target_name
       error_track_message = "User provided a wrong target name;"
-      NetworkHandler.instance.send_track_error(os_app_id, type, lang, error_track_message)
+      NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
       exit(1)
     end
     
@@ -203,7 +203,7 @@ end"
 
       if embed_extensions_plugins_phase.nil?
         error_track_message = "Couldn't find 'Embed App Extensions Plugin' phase"
-        NetworkHandler.instance.send_track_error(os_app_id, type, lang, error_track_message)
+        NetworkHandler.instance.send_track_error(app_id: os_app_id, platform: type, lang: lang, error_message: error_track_message)
         abort error_track_message
       end
     
