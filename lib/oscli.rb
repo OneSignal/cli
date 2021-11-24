@@ -11,17 +11,21 @@ class InstallCommand < Clamp::Command
     option ["--target"], "TARGETNAME", "name of the App target to use. Defaults to the entrypoint name"
     option ["--path"], "PATH", "path to the project directory"
     option ["--entrypoint"], "ENTRYPOINT", "Name of the target XCProject (ios) or appclassfile (android)"
-    option ["--lang"], "LANG", "programming language to use for ios (objc, swift) or android (java, kotlin)", default: ""
+    option ["--lang"], "LANG", "programming language to use for ios (objc, swift) or android (java, kotlin)"
     option ["--appid"], "[APPID]", "OneSignal App ID"
 
     def execute  
       if appid.nil? || appid.empty?
         puts 'Please provide a project appId with the --appid option'
+        error_track_message = "User missed --appId param"
+        NetworkHandler.instance.send_track_error(app_id: "", platform: type, lang: lang, error_message: error_track_message)
         exit(1)
       end
       
       if !type
         puts 'Please provide a project type (ios or android) with the --type option'
+        error_track_message = "User missed --type param"
+        NetworkHandler.instance.send_track_error(app_id: "", platform: type, lang: lang, error_message: error_track_message)
         exit(1)
       end
 
@@ -35,6 +39,8 @@ class InstallCommand < Clamp::Command
 
         unless language == :objc || language == :swift
           puts 'Invalid language (objc or swift)'
+          error_track_message = "User provide invalid language"
+          NetworkHandler.instance.send_track_error(app_id: "", platform: type, lang: lang, error_message: error_track_message)
           exit(1)
         end
         if !target
@@ -47,6 +53,8 @@ class InstallCommand < Clamp::Command
         OSProject::GoogleAndroid.new(entrypoint, appid).add_sdk!()
       else
         puts 'Invalid type (ios or android)'
+        error_track_message = "User provide invalid type: #{type}"
+        NetworkHandler.instance.send_track_error(app_id: "", platform: type, lang: lang, error_message: error_track_message)
       end
       
     end
