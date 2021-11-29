@@ -9,7 +9,6 @@ require 'resolv-replace'
 class InstallCommand < Clamp::Command
     option [ "-t", "--type"], "TYPE", "project type (ios, android)"
     option ["--target"], "TARGETNAME", "name of the App target to use. Defaults to the entrypoint name"
-    option ["--path"], "PATH", "path to the project directory"
     option ["--entrypoint"], "ENTRYPOINT", "Name of the target XCProject (ios) or appclassfile (android)"
     option ["--lang"], "LANG", "programming language to use for ios (objc, swift) or android (java, kotlin)"
     option ["--appid"], "[APPID]", "OneSignal App ID"
@@ -46,6 +45,7 @@ class InstallCommand < Clamp::Command
         if !target
           target = entrypoint
         end
+        path = Dir.pwd
         ios_proj = OSProject::IOS.new(path, target, language, appid)
         xcodeproj_path = path + '/' + entrypoint + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path)
