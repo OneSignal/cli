@@ -4,16 +4,16 @@
 
 The OneSignal CLI is a tool to work with OneSignal projects.
 
-# Setup
-1. Clone the repository
-2. If you do not have bundler 2 installed run `gem install bundler`
-3. Run `bin/bundle install` from the root directory of the repository
-4. Commands can be run via `bin/onesignal <command>` from the root of the repository
+# Mac Setup
+1. Have Homebrew installed
+2. Run `brew tap OneSignal/cli https://github.com/OneSignal/cli`
+3. Run `brew install onesignal-cli`
+4. Run `/usr/local/Cellar/onesignal-cli/{CLI_Version_Number}/bin/bundle install` Example: `/usr/local/Cellar/onesignal-cli/0.0.3/bin/bundle install`
 
 ## Available commands
 
-* `bin/onesignal help` Lists the available commands in the OneSignal CLI
-* `bin/onesignal install-sdk`  Install the OneSignal SDK in the project
+* `onesignal help` Lists the available commands in the OneSignal CLI
+* `onesignal install-sdk`  Install the OneSignal SDK in the project
 
 ## Installation Command
 This command can be used to add the OneSignal SDK to your mobile application project.
@@ -38,14 +38,13 @@ Options:
 * target - name of the App target to install in. Defaults to the entrypoint name. iOS only.
 
 Arguments:
-* Path - path to the project directory
 * Entrypoint - Name of the target XCProject (iOS) or Application class file directory (Android). For Android, if no application class is available, the CLI will create it in the directory and name file provided. For the CLI to create the file for you, you will need to provide the directory inside the project and file name with the extension where you want the Application file to be created. Example: app/src/main/java/com/onesignal/testapplication/BaseApp.java
 * LANG - programming language to use for ios (objc, swift) or Android (java, kotlin)
 * APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
 
-Example Usage
-* iOS: `bin/onesignal install-sdk --type ios ../MyAppDir MyApp objc`
-* Android: `bin/onesignal install-sdk --type android ../MyAppDir app/src/main/java/com/onesignal/testapplication/BaseApp.java java <APPID>`
+Example Usage, run the following command on the root project directory where OneSignal SDK is going to be use
+* iOS: `onesignal install-sdk --type iOS --entrypoint MyApp --lang objc --appid <APPID>`
+* Android: `onesignal install-sdk --type android --entrypoint app/src/main/java/com/onesignal/testapplication/BaseApp.kt --appid <APPID>`
 
 ## Limitations / Comming Soon
 * React Native, Flutter, Unity, Xamarin, and Cordova aren't currently supported. Stay tuned for support in a future release! 
