@@ -89,7 +89,7 @@ end
 
 class OSCLI < Clamp::Command
     option ["--version", "-v"], :flag, "Show version" do
-      puts OSProject.version
+      puts OSProject::VERSION
       NetworkHandler.instance.send_track_command("--version")
       exit(0)
     end
@@ -103,7 +103,7 @@ class OSCLI < Clamp::Command
     subcommand "install-sdk", "Add the OneSignal SDK to the project", InstallCommand
 
     def self.helptext
-      puts "usage: bin/onesignal [--version] [--help] [install-sdk --type <type> <path> <entrypoint> <lang> <appId>]"
+      puts "usage: onesignal [--version] [--help] [install-sdk --type <type> --entrypoint <entrypoint> --lang <lang> --appid <appId>]"
       NetworkHandler.instance.send_track_command("--help")
     end
 

@@ -37,7 +37,7 @@ class NetworkHandler
     request = Net::HTTP::Post.new(URL)
 
     request['app_id'] = ""
-    request['OS-Usage-Data'] = get_usage_data(nil, nil, command, nil)
+    request['OS-Usage-Data'] = get_usage_data(command: command)
 
     response = http.request(request)
   end
