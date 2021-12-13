@@ -1,0 +1,7 @@
+#!/bin/bash -e
+#
+# script/install
+#
+
+`gem install bundler` unless `gem list`.lines.grep(/^bundler \(.*\)/)
+`bundle install`
