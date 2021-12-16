@@ -15,11 +15,11 @@ class OSProject::IOS < OSProject
 
   attr_accessor :target_name
 
-  SWIFT_NSE_PATH = '/tmpl/iOS/swift/NotificationService.swift'
-  OBJC_NSE_H_PATH = '/tmpl/iOS/objc/NotificationService.h'
-  OBJC_NSE_M_PATH = '/tmpl/iOS/objc/NotificationService.m'
-  SWIFT_NSE_INFO_PLIST_PATH = '/tmpl/iOS/swift/Info.plist'
-  OBJC_NSE_INFO_PLIST_PATH = '/tmpl/iOS/objc/Info.plist'
+  SWIFT_NSE_PATH = '/include/iOS/swift/NotificationService.swift'
+  OBJC_NSE_H_PATH = '/include/iOS/objc/NotificationService.h'
+  OBJC_NSE_M_PATH = '/include/iOS/objc/NotificationService.m'
+  SWIFT_NSE_INFO_PLIST_PATH = '/include/iOS/swift/Info.plist'
+  OBJC_NSE_INFO_PLIST_PATH = '/include/iOS/objc/Info.plist'
 
   NSE_POD_DEPENDENCY = "target 'OneSignalNotificationServiceExtension' do
   # Comment the next line if you don\'t want to use dynamic frameworks

@@ -10,7 +10,7 @@ class OnesignalCli < Formula
 
     def install
       prefix.install 'Gemfile'
-      tmpl.install Dir["tmpl/*"]
+      include.install Dir["include/*"]
       lib.install Dir["lib/*"]
       bin.install Dir["bin/*"]
     end
