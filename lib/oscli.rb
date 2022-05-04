@@ -42,12 +42,14 @@ class InstallCommand < Clamp::Command
           NetworkHandler.instance.send_track_error(app_id: "", platform: type, lang: lang, error_message: error_track_message)
           exit(1)
         end
-        if !target
-          target = entrypoint
+        targetname = target
+        if !targetname
+          targetname = entrypoint
         end
-        path = Dir.pwd
-        ios_proj = OSProject::IOS.new(path, target, language, appid)
-        xcodeproj_path = path + '/' + entrypoint + '.xcodeproj'
+        dir = entrypoint.slice(0, entrypoint.rindex('/')) # => "/path/to"
+        path = Dir.pwd + '/' + dir
+        ios_proj = OSProject::IOS.new(path, targetname, language, appid)
+        xcodeproj_path = Dir.pwd + '/' + entrypoint + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path)
       elsif type_downcase == 'android'
         OSProject::GoogleAndroid.new(entrypoint, appid).add_sdk!()
