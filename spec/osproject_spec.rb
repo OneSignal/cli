@@ -27,16 +27,20 @@ Dir.foreach("spec/samples") do |platform|
         end
         context sampledirname do
           it "successfully instantitates the object" do
-            proj = proj_class.new(projdir, 'targetname', lang, 'app_id')
-            expect(proj.type.to_s).to eq platform
-            expect(proj.dir).to eq projdir
+            if platform == 'googleandroid'
+              proj = proj_class.new(projdir, 'app_id')
+            elsif platform =='iOS'
+              proj = proj_class.new(projdir, 'targetname', lang, 'app_id')
+              expect(proj.type.to_s).to eq platform
+              expect(proj.dir).to eq projdir
+            end           
           end
           it "successfully adds sdk" do
             
             if platform == 'googleandroid'
               # For Android samples, we have a appclassfile symlink in the proj root dir
               # When users use the CLI, they specify the file.
-              proj = proj_class.new(projdir, '.appclassfile', lang, 'app_id')
+              proj = proj_class.new(projdir, 'app_id')
               expect(proj.has_sdk?()).to eq false
               proj.add_sdk!()
               expect(proj.has_sdk?()).to eq true
