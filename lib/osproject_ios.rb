@@ -173,7 +173,7 @@ end"
       plist_path = 
         if lang == :swift
           SWIFT_NSE_INFO_PLIST_PATH
-        elsif lang == :objc
+        else
           OBJC_NSE_INFO_PLIST_PATH
         end
       FileUtils.cp_r(cli_dir + plist_path, nsePath)
