@@ -4,10 +4,11 @@ require_relative 'osnetwork'
 
 class OSProject::GoogleAndroid < OSProject
   attr_accessor :app_class_location
+  attr_accessor :dir
 
-  def initialize(app_class_location, os_app_id)
+  def initialize(app_class_location, os_app_id, dir)
     @app_class_location = app_class_location
-    
+    @dir = dir
     directory_split = app_class_location.split('/', -1)
     lang_array = directory_split[-1].split(".")
 
@@ -19,7 +20,6 @@ class OSProject::GoogleAndroid < OSProject
     end
 
     lang = lang_array[1]
-    dir = Dir.pwd
 
     unless lang == "java" || lang == "kt"
       puts 'Invalid language (java or kotlin)'
@@ -58,7 +58,6 @@ class OSProject::GoogleAndroid < OSProject
       lang_index = (app_directory_split.index "main") + 2
       # Get Package directory in the form of ex: com.orgname.appname
       package_directory = app_directory_split.slice(lang_index..-2).join(".")
-     
       puts "Application class will be created under #{dir}/#{app_class_location}\nThis is needed for SDK init code. By saying (N) you can setup the init code by following https://documentation.onesignal.com/docs/android-sdk-setup#step-3-add-required-code.\nProceed with creation? (Y/N)"
       user_response = STDIN.gets.chomp.downcase
 
@@ -293,6 +292,7 @@ class OSProject::GoogleAndroid < OSProject
 
   def has_sdk?
     # TODO: more robust testing
-    return File.readlines(dir + '/app/build.gradle').grep(/OneSignal/).any?
+    return File.readlines(dir + '/build.gradle').grep(/onesignal/).any? &&
+    File.readlines(dir + '/app/build.gradle').grep(/onesignal/).any?
   end
 end

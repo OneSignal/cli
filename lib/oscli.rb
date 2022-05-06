@@ -52,7 +52,8 @@ class InstallCommand < Clamp::Command
         xcodeproj_path = Dir.pwd + '/' + entrypoint + '.xcodeproj'
         ios_proj.install_onesignal!(xcodeproj_path)
       elsif type_downcase == 'android'
-        OSProject::GoogleAndroid.new(entrypoint, appid).add_sdk!()
+        dir = Dir.pwd
+        OSProject::GoogleAndroid.new(entrypoint, appid, dir).add_sdk!()
       else
         puts 'Invalid type (ios or android)'
         error_track_message = "User provide invalid type: #{type}"

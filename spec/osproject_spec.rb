@@ -23,12 +23,19 @@ Dir.foreach("spec/samples") do |platform|
           FileUtils.cp_r(sampledir, projdir, verbose: true)
         end
         after(:all) do
-          #FileUtils.remove_entry tmpdir
+          FileUtils.remove_entry tmpdir
         end
         context sampledirname do
           it "successfully instantitates the object" do
             if platform == 'googleandroid'
-              proj = proj_class.new(projdir, 'app_id')
+              langextension = 
+                if lang == 'kotlin'
+                  'kt'
+                else
+                  lang
+                end
+              appclasspath = 'app/src/main/'+lang+'/com/onesignal/spec/samples/'+lang+'_bottom_nav/ApplicationClass.'+langextension
+              proj = proj_class.new(appclasspath, 'app_id', projdir)
             elsif platform =='iOS'
               proj = proj_class.new(projdir, 'targetname', lang, 'app_id')
               expect(proj.type.to_s).to eq platform
@@ -36,11 +43,17 @@ Dir.foreach("spec/samples") do |platform|
             end           
           end
           it "successfully adds sdk" do
-            
             if platform == 'googleandroid'
+              langextension = 
+                if lang == 'kotlin'
+                  'kt'
+                else
+                  lang
+                end
               # For Android samples, we have a appclassfile symlink in the proj root dir
               # When users use the CLI, they specify the file.
-              proj = proj_class.new(projdir, 'app_id')
+              appclasspath = 'app/src/main/java/com/onesignal/spec/samples/'+lang+'_bottom_nav/ApplicationClass.'+langextension
+              proj = proj_class.new(appclasspath, 'app_id', projdir)
               expect(proj.has_sdk?()).to eq false
               proj.add_sdk!()
               expect(proj.has_sdk?()).to eq true
