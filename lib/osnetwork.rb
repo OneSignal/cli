@@ -1,4 +1,5 @@
 require 'clamp'
+require 'net/http'
 require_relative 'osproject'
 require_relative 'osproject_ios'
 require_relative 'osproject_android'
