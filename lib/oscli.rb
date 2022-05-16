@@ -46,7 +46,10 @@ class InstallCommand < Clamp::Command
         if !targetname
           targetname = entrypoint
         end
-        dir = entrypoint.slice(0, entrypoint.rindex('/')) # => "/path/to"
+        dir = ''
+        if entrypoint.include? '/'
+          dir = entrypoint.slice(0, entrypoint.rindex('/')) # => "/path/to"
+        end
         path = Dir.pwd + '/' + dir
         ios_proj = OSProject::IOS.new(path, targetname, language, appid)
         xcodeproj_path = Dir.pwd + '/' + entrypoint + '.xcodeproj'
