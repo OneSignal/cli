@@ -6,9 +6,9 @@ The OneSignal CLI is a tool to work with OneSignal projects.
 
 # Mac Setup
 1. Have Homebrew installed
-2. Run `brew tap OneSignal/cli https://github.com/OneSignal/cli`
+2. Run `brew tap OneSignal/cli https://github.com/OneSignal/onesignal-cli`
 3. Run `brew install onesignal-cli`
-4. Run `/usr/local/Cellar/onesignal-cli/{CLI_Version_Number}/bin/bundle install` Example: `/usr/local/Cellar/onesignal-cli/0.0.3/bin/bundle install`
+4. Run `/usr/local/Cellar/onesignal-cli/{CLI_Version_Number}/bin/bundle install` Example: `/usr/local/Cellar/onesignal-cli/0.0.4/bin/bundle install`
 
 ## Available commands
 
