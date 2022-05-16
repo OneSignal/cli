@@ -41,6 +41,7 @@ Arguments:
 * Entrypoint - Name of the target XCProject (iOS) or Application class file directory (Android). For Android, if no application class is available, the CLI will create it in the directory and name file provided. For the CLI to create the file for you, you will need to provide the directory inside the project and file name with the extension where you want the Application file to be created. Example: app/src/main/java/com/onesignal/testapplication/BaseApp.java
 * LANG - programming language to use for ios (objc, swift) or Android (java, kotlin)
 * APPID - Optional. OneSignal App ID. Not yet used for iOS installs.
+* TARGET - Optional. Used for the iOS install if your App target name is different from the entrypoint name
 
 Example Usage, run the following command on the root project directory where OneSignal SDK is going to be use
 * iOS: `onesignal install-sdk --type iOS --entrypoint MyApp --lang objc --appid <APPID>`
