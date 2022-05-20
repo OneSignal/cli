@@ -11,10 +11,13 @@ class OnesignalCli < Formula
       include.install Dir["include/*"]
       lib.install Dir["lib/*"]
       bin.install Dir["bin/*"]
+      #system "gem", "install", "bundler", "--conservative"
+      #system "#{bin}/bundle", "install"
+      system "#{bin}/onesignal_postinstall"
     end
   
     def postinstall
-      
+      system "#{bin}/onesignal_postinstall"
     end
     test do
       version_output = shell_output("#{bin}/onesignal version 2>&1")
