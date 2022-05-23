@@ -16,11 +16,13 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     - name: checkout with actions/checkout@v3 
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
+      with: 
+        repository: OneSignal/cli
     - name: download release tarball
-    - uses: robinraju/release-downloader@v1.3
+      uses: robinraju/release-downloader@v1.3
       with:
-        repo: "OneSignal/cli'"
+        repository: "OneSignal/cli"
         tag: "${{ github.ref }}"
         tarBall: true
         token: ${{ secrets.GITHUB_TOKEN }}
