@@ -19,17 +19,11 @@ jobs:
       uses: actions/checkout@v3
       with: 
         repository: OneSignal/cli
-    - name: download release tarball
-      uses: robinraju/release-downloader@v1.3
-      with:
-        repository: "OneSignal/cli"
-        tag: "${{ github.ref_name }}"
-        tarBall: true
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: calculate release tarball sha256
-      run: echo "RELEASE_SHA=$(shasum -a 256 $GITHUB_WORKSPACE/cli-${{ github.ref_name }}\ Release.tar.gz | awk '{print $1}')" >> $GITHUB_ENV
     - name: run update_formula.py
-      run: python3 ./.github/workflows/update_formula.py ${{ github.ref_name }} $RELEASE_SHA
+      run: |
+        echo ${{ github.ref_name }}
+        echo ${{ github.sha }}
+        python3 ./.github/workflows/update_formula.py ${{ github.ref_name }} ${{ github.sha }}
     - name: Commit files onesignal-cli.rb
       run: |
         git config --local user.name  ${{ github.actor }}
