@@ -21,12 +21,13 @@ jobs:
     - uses: robinraju/release-downloader@v1.3
       with:
         repo: "OneSignal/cli'"
-        tag: "$GITHUB_REF"
-        tarBall: true 
+        tag: "${{ github.ref }}"
+        tarBall: true
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: calculate release tarball sha256
-      run: echo "RELEASE_SHA=$(echo openssl sha256 < $GITHUB_REF.tar.gz  )" >> $GITHUB_ENV
+      run: echo "RELEASE_SHA=$(echo openssl sha256 < ${{ github.ref }}.tar.gz  )" >> $GITHUB_ENV
     - name: run update_formula.py
-      run: python3 ./.github/workflows/update_formula.py $GITHUB_REF $RELEASE_SHA
+      run: python3 ./.github/workflows/update_formula.py ${{ github.ref }} $RELEASE_SHA
     - name: Commit files onesignal-cli.rb
       run: |
         git config --local user.name  ${{ github.actor }}
