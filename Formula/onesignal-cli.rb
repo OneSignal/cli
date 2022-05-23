@@ -1,10 +1,9 @@
 class OnesignalCli < Formula
-    desc "The OneSignal CLI is a tool to work with OneSignal projects."
-    homepage "https://github.com/OneSignal/cli"
-    url "https://github.com/OneSignal/cli/archive/refs/tags/0.0.4.tar.gz"
-    sha256 "0ebfc2ce74af73421828bc03e5c7f11367c42903b2123655a7ec2ace004db3d4"
-    license "MIT"
-    version "0.0.4"
+  desc "The OneSignal CLI is a tool to work with OneSignal projects."
+  homepage "https://github.com/OneSignal/cli"
+  url "https://github.com/OneSignal/cli.git", tag: "gemspec-test", revision: "e39a9c2d4c02633f6a23465ad0037ff98e180653"
+  license "MIT"
+  version "gemspec-test"
 
     def install
       prefix.install 'Gemfile'
