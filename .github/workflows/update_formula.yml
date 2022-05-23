@@ -27,7 +27,7 @@ jobs:
         tarBall: true
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: calculate release tarball sha256
-      run: echo "RELEASE_SHA=$(echo openssl sha256 < $GITHUB_WORKSPACE/cli-${{ github.ref_name }}\ Release.tar.gz)" >> $GITHUB_ENV
+      run: echo "RELEASE_SHA=$(shasum -a 256 $GITHUB_WORKSPACE/cli-${{ github.ref_name }}\ Release.tar.gz | awk '{print $1}')" >> $GITHUB_ENV
     - name: run update_formula.py
       run: python3 ./.github/workflows/update_formula.py ${{ github.ref_name }} $RELEASE_SHA
     - name: Commit files onesignal-cli.rb
