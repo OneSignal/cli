@@ -30,7 +30,7 @@ jobs:
         git add .
         git commit -m "Updating the onesignal-cli formula for the latest release"
     - name: Push changes  # push the output folder to your repo
-      uses: ad-m/github-push-action@master
+      uses: ad-m/github-push-action@v0.6.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         force: true
