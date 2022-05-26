@@ -4,7 +4,7 @@ def update_version(version, revision):
   formula = open('Formula/onesignal-cli.rb', 'r')
   lines = formula.readlines()
   lines[3] = "  url \"https://github.com/OneSignal/cli.git\", tag: \"{}\", revision: \"{}\"\n".format(version, revision)
-
+  lines[5] = "  version \"{}\"\n".format(version)
   formula = open('Formula/onesignal-cli.rb', 'w')
   formula.writelines(lines)
   formula.close()
