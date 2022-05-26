@@ -1,7 +1,7 @@
 class OnesignalCli < Formula
   desc "The OneSignal CLI is a tool to work with OneSignal projects."
   homepage "https://github.com/OneSignal/cli"
-  url "https://github.com/OneSignal/cli.git", tag: "gemspec-test", revision: "e39a9c2d4c02633f6a23465ad0037ff98e180653"
+  url "https://github.com/OneSignal/cli.git", tag: "0.0.5", revision: "b615f99ea27e911202af492ca7aedfcbe8847102"
   license "MIT"
   version "gemspec-test"
 
