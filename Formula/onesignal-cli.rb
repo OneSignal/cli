@@ -1,9 +1,9 @@
 class OnesignalCli < Formula
   desc "The OneSignal CLI is a tool to work with OneSignal projects."
   homepage "https://github.com/OneSignal/cli"
-  url "https://github.com/OneSignal/cli.git", tag: "0.0.5", revision: "ce29fca371c9fb998651f3abe9937d1f65affa59"
+  url "https://github.com/OneSignal/cli.git", tag: "0.0.5", revision: "02529ede9b989c7c3497b5f952f1ab41ab731d5f"
   license "MIT"
-  version "gemspec-test"
+  version "0.0.5"
 
   depends_on "ruby" if Hardware::CPU.arm?
   uses_from_macos "ruby", since: :catalina
