@@ -57,7 +57,7 @@ class NetworkHandler
   end
 
   def get_usage_data(platform:nil, lang:nil, command:nil, actions_taken:nil, error_message:nil)
-    data = "kind=sdk, name=#{OSProject::TOOL_NAME}, version=#{OSProject::VERSION}, target-os=#{OSProject.os}"
+    data = "kind=sdk, sdk-name=#{OSProject::TOOL_NAME}, version=#{OSProject::VERSION}, target-os=#{OSProject.os}"
 
     data += ", type=#{platform}" if platform
     data += ", lang=#{lang}" if lang
