@@ -14,7 +14,7 @@ The primary tests are located in `spec/osproject_spec.rb`, which contains the au
 Using RSpec, you can run test cases using `bin/rspec spec/osproject_spec.rb`. Note that the require paths are resolved according to the dir you're in when you're executing the code so running `bin/rspec spec/osproject_spec.rb` from inside the spec folder will not work.
 
 ## CLI
-CLI Behavior and business logic tests are located in `spec/oscli.rb`.
+CLI Behavior and business logic tests are located in `spec/osproject_spec.rb`.
 
 ## API
 API calls are not tested, as the API Client Library codebase handles this.

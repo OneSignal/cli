@@ -8,6 +8,7 @@ GEM
     colored2 (3.1.2)
     diff-lcs (1.4.4)
     nanaimo (0.3.0)
+    rexml (3.2.4)
     rspec (3.10.0)
       rspec-core (~> 3.10.0)
       rspec-expectations (~> 3.10.0)
@@ -35,6 +36,7 @@ PLATFORMS
 
 DEPENDENCIES
   clamp
+  rexml
   rspec
   xcodeproj
 
