@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.summary     = "OneSignal's Ruby CLI"
   s.description = "Ruby Gem for OneSignal's Ruby Command Line Interface."
 
-  s.files = Dir["lib/**/*.rb"] + %w{ bin/onesignal } + Dir["include/**"]
+  s.files = Dir["lib/**/*.rb"] + %w{ bin/onesignal } + Dir["include/**/*"]
 
   s.executables   = %w{ onesignal }
   s.require_paths = %w{ lib }
