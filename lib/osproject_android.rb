@@ -251,7 +251,6 @@ class OSProject::GoogleAndroid < OSProject
 
   def has_sdk?
     # TODO: more robust testing
-    return File.readlines(dir + '/build.gradle').grep(/onesignal/).any? &&
-    File.readlines(dir + '/app/build.gradle').grep(/onesignal/).any?
+    return File.readlines(dir + '/app/build.gradle').grep(/com\.onesignal:OneSignal/).any?
   end
 end
