@@ -77,8 +77,7 @@ class OSProject::GoogleAndroid < OSProject
       end
     end 
 
-    success_mesage = add_deps_build_gradle(build_gradle_dir)
-    success_mesage += add_deps_app_build_gradle(build_gradle_app_dir)
+    success_mesage = add_deps_app_build_gradle(build_gradle_app_dir)
 
     if application_class_exists
       success_mesage += add_application_init_code(project_dir, app_class_location, lang)
@@ -127,39 +126,9 @@ class OSProject::GoogleAndroid < OSProject
     end
   end
 
-  # add deps to /build.gradle
-  def add_deps_build_gradle(build_gradle_dir)
-    gradle_plugin_mesage = " * Added repository provider gradlePluginPortal() to project build.gradle\n"
-    os_gradle_plugin_mesage = " * Added dependency \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\" to project build.gradle \n"    
-
-    success_mesage = ""
-    success_mesage += check_insert_lines(build_gradle_dir,
-                  Regexp.quote("mavenCentral()"),
-                  "gradlePluginPortal()",
-                  gradle_plugin_mesage)
-
-    success_mesage += check_insert_lines(build_gradle_dir,
-                  Regexp.quote("jcenter()"),
-                  "gradlePluginPortal()",
-                  gradle_plugin_mesage)
-
-    success_mesage += check_insert_lines(build_gradle_dir,
-                  "classpath 'com.android.tools.build:gradle:[^']*'",
-                  "classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]'",
-                  os_gradle_plugin_mesage)
-
-    success_mesage += check_insert_lines(build_gradle_dir,
-                  "classpath \"com.android.tools.build:gradle:[^']*\"",
-                  "classpath \"gradle.plugin.com.onesignal:onesignal-gradle-plugin:[0.12.9, 0.99.99]\"",
-                  os_gradle_plugin_mesage)
-
-    success_mesage
-  end
-
   # add deps to /app/build.gradle
   def add_deps_app_build_gradle(build_gradle_app_dir)
     app_os_dependency_message = " * Added dependency 'com.onesignal:OneSignal:[4.0.0, 4.99.99]' to app build.gradle \n"
-    app_os_gradle_plugin_mesage = " * Added plugin 'com.onesignal.androidsdk.onesignal-gradle-plugin' to app build.gradle\n"
 
     success_mesage = ""
     success_mesage += check_insert_lines(build_gradle_app_dir,
@@ -181,16 +150,6 @@ class OSProject::GoogleAndroid < OSProject
       "implementation 'com.google.android.material:material:[^']*'",
       "implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'",
       app_os_dependency_message)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-      "apply plugin: 'com.android.application'",
-      "apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
-      app_os_gradle_plugin_mesage)
-
-    success_mesage += check_insert_lines(build_gradle_app_dir,
-      "id 'com.android.application'",
-      "id 'com.onesignal.androidsdk.onesignal-gradle-plugin'",
-      app_os_gradle_plugin_mesage)
 
     success_mesage
   end
@@ -292,7 +251,6 @@ class OSProject::GoogleAndroid < OSProject
 
   def has_sdk?
     # TODO: more robust testing
-    return File.readlines(dir + '/build.gradle').grep(/onesignal/).any? &&
-    File.readlines(dir + '/app/build.gradle').grep(/onesignal/).any?
+    return File.readlines(dir + '/app/build.gradle').grep(/com\.onesignal:OneSignal/).any?
   end
 end
